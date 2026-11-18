@@ -12,7 +12,8 @@
   "hyperdrive": [
     {
       "binding": "HYPERDRIVE",
-      "id": "REPLACE_WITH_HYPERDRIVE_ID"
+      "id": "REPLACE_WITH_HYPERDRIVE_ID",
+      "remote": true
     }
   ],
   "observability": {
