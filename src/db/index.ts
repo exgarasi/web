@@ -3,8 +3,10 @@ import postgres from "postgres";
 import { drizzle } from "drizzle-orm/postgres-js";
 import { authSchemaTables } from "./auth-schema";
 
-type HyperdriveBinding = { connectionString: string };
-type RuntimeEnv = { HYPERDRIVE?: HyperdriveBinding; DATABASE_URL?: string };
+type RuntimeEnv = {
+  HYPERDRIVE?: { connectionString: string };
+  DATABASE_URL?: string;
+};
 
 export async function getDatabase() {
   const { env } = getCloudflareContext();
@@ -15,15 +17,17 @@ export async function getDatabase() {
     throw new Error("Cloudflare HYPERDRIVE binding is missing. Configure it in wrangler.jsonc.");
   }
 
-  // Hyperdrive owns the shared connection pool. Keep the per-isolate client small.
+  // Hyperdrive maintains the shared pool; this client is scoped to one request operation.
   const client = postgres(connectionString, {
     max: 5,
     fetch_types: false,
     prepare: true,
+    connection: { application_name: "EXGARASI Cloudflare Worker" },
   });
 
   return {
     sql: client,
     db: drizzle(client, { schema: authSchemaTables }),
+    close: () => client.end({ timeout: 5 }),
   };
 }
