@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "tsx scripts/migrate.ts"
   },
   "dependencies": {
     "drizzle-orm": "^0.44.0",
@@ -31,6 +31,7 @@
     "eslint-config-next": "^16.0.0",
     "tailwindcss": "^4.0.0",
     "typescript": "^5.7.0",
-    "drizzle-kit": "^0.31.0"
+    "drizzle-kit": "^0.31.0",
+    "tsx": "^4.19.0"
   }
 }
