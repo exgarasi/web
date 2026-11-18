@@ -2,33 +2,55 @@
 
 Hybrid automotive marketplace for EXGARASI Official inventory and invited partner sellers.
 
+## Business model
+- Hybrid: EXGARASI Official + partner stores
+- Seller onboarding: invite-only and admin-approved
+- Monetization: commission on completed partner-store sales
+- Launch vertical: automotive (diecast, parts, accessories, lifestyle)
+
 ## Stack
 - Next.js App Router + TypeScript
 - Tailwind CSS
-- PostgreSQL + Drizzle ORM
-- Cloudflare Workers deployment target (adapter decision and compatibility validation required)
+- PostgreSQL + Drizzle ORM (Better Auth adapter)
+- Better Auth email/password sessions
 - Cloudflare R2 for product media
+- PostgreSQL row-level security for store and buyer isolation
 
-## Current status
-This repository is a greenfield foundation. The public landing page and initial architecture/database documents are being established. Authentication, production database provisioning, payment, shipping, seller dashboard and checkout are not yet implemented.
+## Repository status
+The `feat/marketplace-foundation` branch contains the greenfield application foundation, SQL migrations, authentication, seller invitation flow, and initial buyer/seller/admin dashboards. This is an implementation branch, not a production-ready marketplace. Payment, shipping, order checkout, finance settlement, full catalog management and email delivery for seller invitations are still release work.
 
-## Local development
-1. Install Node.js LTS compatible with the selected Next.js release.
-2. Copy `.env.example` to `.env.local` and set local PostgreSQL credentials.
-3. Install dependencies with `npm install`.
-4. Start the app using `npm run dev`.
+## Local setup
+1. Provision PostgreSQL using the separate migrator and runtime roles in `docs/deployment.md`.
+2. Copy `.env.example` to `.env.local` and configure both database URLs and `AUTH_SECRET`.
+3. Install dependencies: `npm install`.
+4. Apply SQL migrations: `npm run db:migrate`.
+5. Apply the runtime table/column grants described in `docs/deployment.md`.
+6. Start the app: `npm run dev`.
+
+## Routes
+- `/`: public landing page
+- `/sign-up`: buyer registration
+- `/sign-in`: account login
+- `/account/dashboard`: buyer order history
+- `/seller/accept-invitation?token=...`: seller onboarding
+- `/seller/dashboard`: partner store overview
+- `/admin/dashboard`: admin metrics and seller invitations
+
+## Database
+SQL files in `database/` are the authoritative ordered migrations. The runner records applied filenames in `public.schema_migrations`. Never run the web app with the migration/owner credentials. The runtime role must not own tables and must not have `BYPASSRLS`.
 
 ## Quality checks
 - `npm run lint`
 - `npm run typecheck`
 - `npm run build`
 
-## Database
-Initial PostgreSQL schema: `database/0001_marketplace_foundation.sql`.
-Apply it only to a disposable local development database first. Review the schema, add security policies and tested transactional functions, then manage all later changes through versioned migrations.
+GitHub Actions runs these checks on pushes and pull requests. They still need to pass in the connected repository environment before deployment.
 
-## Important
-- Never commit secrets or production credentials.
-- Never treat browser-side totals or payment return URLs as authoritative.
-- Production payments/payouts require a provider-approved marketplace funds flow and legal/compliance review.
-- Read `docs/architecture.md` and `docs/implementation-plan.md` before implementation.
+## Security and production gates
+- Configure a verified sender domain and Resend credentials for production email verification.
+- Test row-level security using two different seller accounts and the actual non-owner runtime database role.
+- Add checkout, payment provider webhooks, shipping, refunds, ledger reconciliation and payout workflows.
+- Add password recovery, rate limits, abuse protection, monitoring and backup restore drills.
+- Confirm marketplace split-settlement capabilities and Indonesian regulatory requirements before processing real customer funds.
+
+Read `docs/architecture.md`, `docs/implementation-plan.md`, and `docs/deployment.md` before deploying.
