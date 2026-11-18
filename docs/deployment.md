@@ -46,9 +46,9 @@ In Supabase Dashboard → Project Settings → Database, copy the connection str
 
 Set these in the hosting provider's encrypted environment settings. Do not place real secrets in `.env.example`.
 
-## 4. Applied migrations 0001–0009
+## 4. Applied migrations 0001–0012
 
-From the repository branch `feat/marketplace-foundation`, install dependencies with `npm ci`. Migrations 0001–0009 are already applied to EXGARASI-dev through the Supabase managed migration tool. Do not run `npm run db:migrate` with the runtime role: the dedicated migration login and ownership model are not enabled yet. The Supabase migration history records applied migrations. A matching `public.schema_migrations` ledger has been seeded to prevent the repository runner from replaying those files. Migrations 0001–0009 include the marketplace schema, Better Auth tables, application identity mapping, RLS, stock functions, least-privilege policies, Supabase API hardening and foreign-key indexes.
+From the repository branch `feat/marketplace-foundation`, install dependencies with `npm ci`. Migrations 0001–0012 are already applied to EXGARASI-dev through the Supabase managed migration tool. Do not run `npm run db:migrate` with the runtime role: the dedicated migration login and ownership model are not enabled yet. The Supabase migration history records applied migrations. A matching `public.schema_migrations` ledger has been seeded to prevent the repository runner from replaying those files. Migrations 0001–0012 include the marketplace schema, Better Auth tables, application identity mapping, RLS, stock functions, least-privilege policies, Supabase API hardening, foreign-key indexes, private-schema RLS and migration-ledger isolation.
 
 Runtime grants for `exgarasi_app` have already been applied to the development project. Reapply the appropriate grants as the database owner after adding tables or mutable columns:
 
@@ -78,7 +78,7 @@ Run these grants again when new tables or mutable columns are introduced. Do not
 
 In Supabase Dashboard → Project Settings → API, do not add the `better_auth` schema to the exposed Data API schemas. Keep it as a private schema for the server-side Better Auth adapter. The app's database access uses the server-only PostgreSQL connection, not browser-side Supabase JS.
 
-Migration 0007 revokes default PUBLIC function execution and table/sequence access in the public schema, then grants the application functions only to `exgarasi_app`. Never add the migration role or its password to the application runtime.
+Migrations 0007–0008 revoke default/public RPC and table access from browser roles, then grant the application functions only to `exgarasi_app`. Migrations 0011–0012 enable RLS on Better Auth and migration metadata tables, with access limited to the trusted runtime or migration role. Never add the migration role or its password to the application runtime.
 
 ## 6. Authentication bootstrap
 
