@@ -1,4 +1,4 @@
--- EXGARASI migration 0005: least-privilege DML policies and listing inventory initialization.
+-- EXGARASI migration 0005: least-privilege DML policies.
 -- Runtime grants are described in docs/deployment.md. RLS alone does not restrict columns.
 
 -- Prevent buyer self-deletion or mutation of privileged profile fields.
