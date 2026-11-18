@@ -72,25 +72,3 @@ CREATE POLICY disputes_buyer_insert ON public.disputes
 -- Audit log entries are written by trusted functions only.
 DROP POLICY IF EXISTS audit_logs_insert_actor ON public.audit_logs;
 
--- Initialize a zero-stock inventory row for every new listing.
-CREATE OR REPLACE FUNCTION public.app_create_listing_inventory()
-RETURNS trigger
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-BEGIN
-  INSERT INTO public.inventories(listing_id, physical_stock, reserved_stock)
-  VALUES(NEW.id, 0, 0)
-  ON CONFLICT (listing_id) DO NOTHING;
-  RETURN NEW;
-END;
-$$;
-
-CREATE TRIGGER listings_create_inventory
-AFTER INSERT ON public.listings
-FOR EACH ROW EXECUTE FUNCTION public.app_create_listing_inventory();
-
-INSERT INTO public.inventories(listing_id,physical_stock,reserved_stock)
-SELECT l.id,0,0 FROM public.listings l
-ON CONFLICT (listing_id) DO NOTHING;
