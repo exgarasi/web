@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/current-user";
 import { withAuthenticatedDb } from "@/lib/db-context";
+import { SellerInviteForm } from "./invite-form";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -21,6 +22,6 @@ export default async function AdminDashboard() {
   return <main className="min-h-screen bg-gray-50 px-6 py-12"><div className="mx-auto max-w-6xl">
     <p className="text-xs font-bold tracking-[.25em] text-sky-600">EXGARASI CONTROL CENTER</p><h1 className="mt-2 text-3xl font-black">Admin dashboard</h1><p className="mt-2 text-sm text-gray-500">{user.full_name} · {user.email}</p>
     <div className="mt-8 grid gap-4 md:grid-cols-3">{metrics.map(([label,value])=><section key={label} className="rounded-2xl border bg-white p-6"><p className="text-sm text-gray-500">{label}</p><p className="mt-3 text-4xl font-black">{value}</p></section>)}</div>
-    <section className="mt-8 rounded-2xl border bg-white p-6"><h2 className="font-bold">Seller invitations</h2><p className="mt-2 text-sm text-gray-500">Protected endpoint: POST /api/admin/seller-invitations. Configure transactional email before production.</p></section>
+    <section className="mt-8 rounded-2xl border bg-white p-6"><h2 className="font-bold">Invite a partner seller</h2><p className="mt-2 text-sm text-gray-500">Invitations expire after seven days and can only be accepted by an account with the invited email.</p><SellerInviteForm/></section>
   </div></main>;
 }
