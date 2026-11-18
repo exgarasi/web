@@ -1,0 +1,34 @@
+import { readdir } from "node:fs/promises";
+import path from "node:path";
+import postgres from "postgres";
+
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) throw new Error("DATABASE_URL is required.");
+
+const sql = postgres(connectionString, { max: 1, prepare: false });
+try {
+  await sql`create table if not exists public.schema_migrations (
+    filename text primary key,
+    applied_at timestamptz not null default now()
+  )`;
+  const directory = path.join(process.cwd(), "database");
+  const files = (await readdir(directory))
+    .filter((name) => /^000[0-9]+_.*\.sql$/.test(name))
+    .sort();
+
+  for (const filename of files) {
+    const exists = await sql`select 1 from public.schema_migrations where filename = ${filename}`;
+    if (exists.length) {
+      process.stdout.write("skip " + filename + "\n");
+      continue;
+    }
+    process.stdout.write("apply " + filename + "\n");
+    await sql.begin(async (tx) => {
+      await tx.file(path.join(directory, filename));
+      await tx`insert into public.schema_migrations(filename) values (${filename})`;
+    });
+  }
+  process.stdout.write("Database migrations complete.\n");
+} finally {
+  await sql.end();
+}
