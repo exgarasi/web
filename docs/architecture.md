@@ -9,9 +9,10 @@
 
 ## Application topology
 - Web: Next.js + TypeScript, responsive storefront and role-specific dashboards
-- Runtime: Cloudflare Workers using a supported Next.js deployment adapter
+- MVP runtime: standard Node.js hosting for Next.js (Vercel, Railway, Render, or equivalent); Cloudflare provides DNS, CDN, WAF and R2
+- Future runtime option: Cloudflare Workers + Hyperdrive after validating request-scoped PostgreSQL connections and Better Auth adapter lifecycle
 - API: server-side application modules; never trust client-submitted prices, roles, stock, or payment status
-- Database: managed PostgreSQL; Drizzle ORM and versioned SQL migrations
+- Database: managed PostgreSQL; Drizzle ORM for Better Auth and versioned SQL migrations (raw SQL is authoritative)
 - Media: Cloudflare R2 with short-lived presigned upload URLs
 - Async work: Cloudflare Queues for notifications, image processing, webhook follow-ups
 - External integrations: marketplace-capable payment provider, shipping aggregator, email provider
