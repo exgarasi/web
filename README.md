@@ -37,7 +37,7 @@ The `feat/marketplace-foundation` branch contains the greenfield application fou
 - `/admin/dashboard`: admin metrics and seller invitations
 
 ## Database
-SQL files in `database/` are the authoritative ordered migrations. The runner records applied filenames in `public.schema_migrations`. Never run the web app with the migration/owner credentials. The runtime role must not own tables and must not have `BYPASSRLS`.
+SQL files in `database/` are the authoritative ordered migrations. Supabase migration history records managed migrations; `public.schema_migrations` is seeded to keep the custom runner from replaying migrations already applied to EXGARASI-dev. Never run the web app with the migration/owner credentials. The runtime role must not own tables and must not have `BYPASSRLS`.
 
 ## Quality checks
 - `npm run lint`
