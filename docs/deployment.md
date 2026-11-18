@@ -17,35 +17,28 @@ Save each project's database password in a password manager. Never commit it to 
 
 For the initial migration, use the project's direct PostgreSQL connection if IPv6/network access permits, or the Supabase session pooler connection. Use a direct/session connection for DDL migrations; use the transaction pooler only for application runtime after verifying prepared statements and transaction behavior. This app uses postgres.js with `prepare: false`.
 
-## 2. Create isolated PostgreSQL roles
+## 2. PostgreSQL roles and credential setup
 
-Open Supabase Dashboard → SQL Editor in the development project. Run the following as the database owner. Replace both passwords with unique generated secrets:
+The development project already contains two restricted roles:
+- `exgarasi_app`: application runtime role; `NOBYPASSRLS`, not an owner of marketplace tables.
+- `exgarasi_migrator`: reserved migration role; currently `NOLOGIN`. Schema changes are currently applied through the Supabase migration control plane.
+
+The roles are intentionally created without passwords. Do not send database passwords in chat or commit them to GitHub. When ready to connect the Next.js server, generate a unique password in a password manager and set it directly in Supabase Dashboard → SQL Editor:
 
 ```sql
-CREATE ROLE exgarasi_migrator LOGIN PASSWORD 'REPLACE_WITH_LONG_RANDOM_MIGRATION_SECRET'
-  NOSUPERUSER NOCREATEDB NOCREATEROLE BYPASSRLS;
-CREATE ROLE exgarasi_app LOGIN PASSWORD 'REPLACE_WITH_LONG_RANDOM_RUNTIME_SECRET'
+ALTER ROLE exgarasi_app LOGIN PASSWORD 'PASTE_A_NEW_RANDOM_PASSWORD_HERE'
   NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS;
-
-GRANT CONNECT ON DATABASE postgres TO exgarasi_migrator, exgarasi_app;
-GRANT CREATE ON DATABASE postgres TO exgarasi_migrator;
-GRANT CREATE ON SCHEMA public TO exgarasi_migrator;
-CREATE SCHEMA IF NOT EXISTS better_auth AUTHORIZATION exgarasi_migrator;
-GRANT USAGE ON SCHEMA public, better_auth TO exgarasi_app;
-
-ALTER DEFAULT PRIVILEGES FOR ROLE exgarasi_migrator IN SCHEMA public
-  GRANT SELECT, INSERT ON TABLES TO exgarasi_app;
-ALTER DEFAULT PRIVILEGES FOR ROLE exgarasi_migrator IN SCHEMA better_auth
-  GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO exgarasi_app;
 ```
 
-The migration role is a trusted schema owner and is used only by migration jobs. The runtime role must not own tables, be superuser, or have `BYPASSRLS`. The app does not use Supabase browser `anon` or `authenticated` roles for its own data access.
+Use a long random password and keep it only in the password manager and the hosting provider's encrypted environment settings. Until this is done, the runtime role cannot authenticate over PostgreSQL. Do not use the Supabase `service_role` or a project-owner password as the application's normal database identity.
+
+Migrations for the current development project have been applied with the Supabase managed migration tool. The `exgarasi_migrator` role is reserved for a later dedicated CI migration runner; do not enable LOGIN or assign it credentials until its object ownership and migration permissions are provisioned deliberately.
 
 ## 3. Configure migration and runtime connection strings
 
 In Supabase Dashboard → Project Settings → Database, copy the connection strings and set the username to the role created above. Use the host, port, database name and SSL settings shown by Supabase.
 
-- `MIGRATION_DATABASE_URL`: `exgarasi_migrator` using direct connection or session pooler.
+- `MIGRATION_DATABASE_URL`: leave unset for now; current development migrations are applied through Supabase's managed migration tool.
 - `DATABASE_URL`: `exgarasi_app` using direct connection or transaction pooler after testing.
 - `APP_BASE_URL` and `NEXT_PUBLIC_APP_URL`: application origin.
 - `AUTH_SECRET`: random secret with at least 32 characters.
@@ -53,7 +46,7 @@ In Supabase Dashboard → Project Settings → Database, copy the connection str
 
 Set these in the hosting provider's encrypted environment settings. Do not place real secrets in `.env.example`.
 
-## 4. Apply migrations 0001–0007
+## 4. Applied migrations 0001–0009
 
 From the repository branch `feat/marketplace-foundation`:
 
@@ -62,9 +55,9 @@ npm ci
 npm run db:migrate
 ```
 
-The migration runner applies ordered SQL files and records each completed filename in `public.schema_migrations`. Migrations 0001–0007 include the marketplace schema, Better Auth tables, application identity mapping, RLS, stock functions, least-privilege policies and Supabase privilege hardening.
+The Supabase migration history records applied migrations. A matching `public.schema_migrations` ledger has also been seeded for the repository's custom runner so it will not replay the migrations already applied to this project. Migrations 0001–0009 include the marketplace schema, Better Auth tables, application identity mapping, RLS, stock functions, least-privilege policies, Supabase API hardening and foreign-key indexes.
 
-After migrations, apply the runtime grants as `exgarasi_migrator`/database owner:
+Runtime grants for `exgarasi_app` have already been applied to the development project. Reapply the appropriate grants as the database owner after adding tables or mutable columns:
 
 ```sql
 GRANT SELECT, INSERT ON ALL TABLES IN SCHEMA public TO exgarasi_app;
@@ -82,7 +75,7 @@ GRANT UPDATE (title_override, description_override, condition, price_amount, wei
 GRANT UPDATE (status) ON public.carts TO exgarasi_app;
 GRANT UPDATE (quantity) ON public.cart_items TO exgarasi_app;
 REVOKE INSERT, UPDATE, DELETE ON public.user_roles FROM exgarasi_app;
-REVOKE ALL ON public.schema_migrations FROM exgarasi_app;
+REVOKE ALL ON public.schema_migrations FROM PUBLIC, anon, authenticated, exgarasi_app;
 GRANT DELETE ON public.addresses, public.carts, public.cart_items, public.listings, public.listing_images TO exgarasi_app;
 ```
 
