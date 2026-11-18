@@ -48,14 +48,7 @@ Set these in the hosting provider's encrypted environment settings. Do not place
 
 ## 4. Applied migrations 0001–0009
 
-From the repository branch `feat/marketplace-foundation`:
-
-```bash
-npm ci
-npm run db:migrate
-```
-
-The Supabase migration history records applied migrations. A matching `public.schema_migrations` ledger has also been seeded for the repository's custom runner so it will not replay the migrations already applied to this project. Migrations 0001–0009 include the marketplace schema, Better Auth tables, application identity mapping, RLS, stock functions, least-privilege policies, Supabase API hardening and foreign-key indexes.
+From the repository branch `feat/marketplace-foundation`, install dependencies with `npm ci`. Migrations 0001–0009 are already applied to EXGARASI-dev through the Supabase managed migration tool. Do not run `npm run db:migrate` with the runtime role: the dedicated migration login and ownership model are not enabled yet. The Supabase migration history records applied migrations. A matching `public.schema_migrations` ledger has been seeded to prevent the repository runner from replaying those files. Migrations 0001–0009 include the marketplace schema, Better Auth tables, application identity mapping, RLS, stock functions, least-privilege policies, Supabase API hardening and foreign-key indexes.
 
 Runtime grants for `exgarasi_app` have already been applied to the development project. Reapply the appropriate grants as the database owner after adding tables or mutable columns:
 
