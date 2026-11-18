@@ -19,6 +19,6 @@ export default function SignInPage() {
     <label className="mt-4 block text-sm font-semibold">Password<input type="password" required value={password} onChange={e=>setPassword(e.target.value)} className="mt-2 w-full rounded-xl border px-4 py-3"/></label>
     {error&&<p className="mt-4 text-sm text-red-600">{error}</p>}
     <button disabled={busy} className="mt-7 w-full rounded-xl bg-gray-950 px-5 py-3 font-bold text-white disabled:opacity-50">{busy?"Signing in...":"Sign in"}</button>
-    <p className="mt-5 text-xs leading-5 text-gray-500">Email verification is required. New seller accounts must be invited by EXGARASI.</p>
+    <a href="/sign-up" className="mt-5 block text-center text-sm font-semibold text-sky-600">Create a buyer account</a>
   </form></main>;
 }
