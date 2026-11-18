@@ -77,7 +77,7 @@ BEGIN
 END;
 $$;
 CREATE TRIGGER auth_user_profile_sync
-AFTER INSERT OR UPDATE OF name, email, email_verified ON auth."user"
+AFTER INSERT OR UPDATE ON auth."user"
 FOR EACH ROW EXECUTE FUNCTION public.sync_auth_user_to_profile();
 
 -- Session-scoped identity is set only by trusted server code inside a transaction:
