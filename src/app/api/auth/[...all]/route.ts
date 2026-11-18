@@ -4,12 +4,15 @@ import { getAuth } from "@/lib/auth";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function GET(request: Request) {
-  const handlers = toNextJsHandler(await getAuth());
-  return handlers.GET(request);
+async function handle(request: Request, method: "GET" | "POST") {
+  const authRuntime = await getAuth();
+  try {
+    const handlers = toNextJsHandler(authRuntime.auth);
+    return await handlers[method](request);
+  } finally {
+    await authRuntime.close();
+  }
 }
 
-export async function POST(request: Request) {
-  const handlers = toNextJsHandler(await getAuth());
-  return handlers.POST(request);
-}
+export const GET = (request: Request) => handle(request, "GET");
+export const POST = (request: Request) => handle(request, "POST");
