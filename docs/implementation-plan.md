@@ -4,55 +4,65 @@
 - [x] Confirm hybrid model, invite-only sellers, commission revenue, automotive launch
 - [x] Locate GitHub repository and create isolated feature branch
 - [x] Add initial architecture and database foundation
+- [x] Add ordered SQL migration runner and CI workflow (CI execution still pending)
 - [ ] Select managed PostgreSQL provider and create dev/preview/prod environments
-- [ ] Select authentication approach and implement sessions
-- [ ] Add migration runner, lint, typecheck, unit tests and CI
+- [x] Select Better Auth and implement PostgreSQL-backed sessions
+- [ ] Complete automated unit, integration and RLS isolation tests
 
 ## Stage 1 — Identity and seller onboarding
-- Buyer registration and verification
-- Admin and support roles
-- Invitation tokens stored as hashes, expiry and one-time acceptance
-- Store creation, owner membership and verification workflow
-- Server-side RBAC and store-level authorization tests
+- [x] Buyer email/password registration and sign-in
+- [x] Production email verification integration hook (requires verified Resend sender and credentials)
+- [x] Admin/super-admin authorization gate; initial super-admin is provisioned by database operator
+- [x] Invitation tokens stored as hashes, seven-day expiry and atomic one-time acceptance
+- [x] Partner store creation and owner membership on invitation acceptance
+- [ ] Seller KYC/document review and admin approval interface
+- [x] Server-side role checks and baseline PostgreSQL RLS policies
+- [ ] Automated tenant-isolation tests with two sellers and the actual non-owner runtime role
 
 ## Stage 2 — Catalog and inventory
-- Automotive taxonomy and brands
-- Master product and store listing separation
-- Seller SKU uniqueness per store
-- Listing moderation and image upload to R2
-- Atomic stock reservation, release, sale and adjustment
-- Vehicle compatibility attributes for parts/accessories
+- [x] Master product and store listing database separation
+- [x] Seller SKU uniqueness per store
+- [x] Inventory rows created automatically for new listings
+- [x] Atomic stock adjustment, reservation, release and consumption functions
+- [x] Inventory and order indexes
+- [ ] Automotive taxonomy, brand and vehicle-fitment management UI
+- [ ] Listing moderation and image upload to R2
+- [ ] Seller catalog and inventory management screens
 
 ## Stage 3 — Marketplace commerce
-- Cart validation and server-side price calculation
-- Multi-store checkout with parent order and one sub-order per store
-- Payment adapter and signed webhook verification
-- Idempotent payment processing
-- Shipping quotes, labels and tracking adapter
-- Cancellation and refund workflow
+- [ ] Cart validation and server-side price calculation
+- [ ] Multi-store checkout with parent order and one sub-order per store
+- [ ] Payment adapter and signed webhook verification
+- [ ] Idempotent payment processing
+- [ ] Shipping quotes, labels and tracking adapter
+- [ ] Cancellation and refund workflow
 
 ## Stage 4 — Marketplace finance
-- Effective-dated commission rules
-- Immutable ledger and reconciliation reports
-- Seller payable calculation
-- Provider-supported split settlement/payout flow
-- Payout approval and audit trail
-- Finance and dispute dashboards
+- [ ] Effective-dated commission rules in operational workflows
+- [ ] Immutable ledger and reconciliation reports
+- [ ] Seller payable calculation
+- [ ] Provider-supported split settlement/payout flow
+- [ ] Payout approval and audit trail
+- [ ] Finance and dispute dashboards
 
 ## Stage 5 — User interfaces
-- Public storefront and search
-- Buyer account, checkout and order tracking
-- Seller dashboard, products, inventory, orders and finance
-- Admin dashboard, seller invitations, moderation and reports
+- [x] Public EXGARASI landing page
+- [x] Buyer registration, sign-in and initial order-history dashboard
+- [x] Seller invitation acceptance and initial store dashboard
+- [x] Admin dashboard metrics and seller invitation form
+- [ ] Full buyer account, checkout and order tracking
+- [ ] Seller products, inventory, orders and finance management
+- [ ] Admin seller verification, moderation, order operations and reports
 
 ## Stage 6 — Production readiness
-- Authorization and tenant-isolation tests
-- Concurrent checkout and overselling tests
-- Webhook replay and idempotency tests
-- Refund and payout reconciliation tests
-- Security review, rate limiting and abuse protection
-- Backup restore drill, monitoring and incident runbooks
-- Pilot with 5–10 invited sellers before public expansion
+- [ ] Run CI and fix all lint, typecheck and build failures
+- [ ] Authorization and tenant-isolation tests
+- [ ] Concurrent checkout and overselling tests
+- [ ] Webhook replay and idempotency tests
+- [ ] Refund and payout reconciliation tests
+- [ ] Security review, rate limiting and abuse protection
+- [ ] Backup restore drill, monitoring and incident runbooks
+- [ ] Pilot with 5–10 invited sellers before public expansion
 
 ## Non-negotiable acceptance criteria
 1. A seller cannot read or mutate another store's private data.
