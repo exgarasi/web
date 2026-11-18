@@ -1,60 +1,76 @@
-# EXGARASI local setup and deployment
+# EXGARASI — Supabase managed PostgreSQL setup
 
-## 1. Provision PostgreSQL roles
+## Deployment target
 
-For the first MVP, deploy Next.js on a standard Node.js runtime (for example Vercel, Railway, or Render). Keep Cloudflare for DNS, CDN, WAF and R2. Do not deploy this current module-level PostgreSQL client to Workers until its request-scoped connection lifecycle and Better Auth adapter are validated with Hyperdrive. Use a managed PostgreSQL service. Create two separate roles:
-- `exgarasi_migrator`: schema owner / migration credentials; use only in deployment or migration jobs.
-- `exgarasi_app`: application runtime login; must be NOSUPERUSER, NOBYPASSRLS, and must not own application tables.
+- Supabase managed PostgreSQL project, with separate development and production projects.
+- EXGARASI Next.js application on a Node.js runtime.
+- Cloudflare DNS, CDN, WAF and R2 remain available for media.
+- The application connects to PostgreSQL from the trusted server runtime using the dedicated `exgarasi_app` login. Do not expose database credentials or service-role keys in browser bundles.
 
-Example DBA commands (replace passwords and database name securely):
+## 1. Create Supabase projects
+
+Create two projects in the Supabase dashboard:
+1. `exgarasi-dev` for migrations, seed data and security tests.
+2. `exgarasi-prod` for production, created only after dev verification.
+
+Save each project's database password in a password manager. Never commit it to GitHub or paste it into source files.
+
+For the initial migration, use the project's direct PostgreSQL connection if IPv6/network access permits, or the Supabase session pooler connection. Use a direct/session connection for DDL migrations; use the transaction pooler only for application runtime after verifying prepared statements and transaction behavior. This app uses postgres.js with `prepare: false`.
+
+## 2. Create isolated PostgreSQL roles
+
+Open Supabase Dashboard → SQL Editor in the development project. Run the following as the database owner. Replace both passwords with unique generated secrets:
 
 ```sql
-CREATE ROLE exgarasi_migrator LOGIN PASSWORD 'REPLACE_WITH_SECRET'
+CREATE ROLE exgarasi_migrator LOGIN PASSWORD 'REPLACE_WITH_LONG_RANDOM_MIGRATION_SECRET'
   NOSUPERUSER NOCREATEDB NOCREATEROLE BYPASSRLS;
-CREATE ROLE exgarasi_app LOGIN PASSWORD 'REPLACE_WITH_SECRET'
+CREATE ROLE exgarasi_app LOGIN PASSWORD 'REPLACE_WITH_LONG_RANDOM_RUNTIME_SECRET'
   NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS;
 
-GRANT CONNECT ON DATABASE exgarasi TO exgarasi_migrator, exgarasi_app;
-GRANT CREATE ON DATABASE exgarasi TO exgarasi_migrator;
+GRANT CONNECT ON DATABASE postgres TO exgarasi_migrator, exgarasi_app;
+GRANT CREATE ON DATABASE postgres TO exgarasi_migrator;
 GRANT CREATE ON SCHEMA public TO exgarasi_migrator;
 CREATE SCHEMA IF NOT EXISTS better_auth AUTHORIZATION exgarasi_migrator;
 GRANT USAGE ON SCHEMA public, better_auth TO exgarasi_app;
 
--- Default privileges apply to tables created by the migration owner in future migrations.
 ALTER DEFAULT PRIVILEGES FOR ROLE exgarasi_migrator IN SCHEMA public
   GRANT SELECT, INSERT ON TABLES TO exgarasi_app;
 ALTER DEFAULT PRIVILEGES FOR ROLE exgarasi_migrator IN SCHEMA better_auth
   GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO exgarasi_app;
 ```
 
-The migration role should own the tables and security-definer functions. Never run the application using the migration/owner role. RLS is not a security boundary if the runtime role owns the tables or has BYPASSRLS. Do not add blanket UPDATE or DELETE grants to the runtime role: the column-level grants above are deliberate. When adding a new mutable feature, add the smallest required column grants and a matching RLS policy.
+The migration role is a trusted schema owner and is used only by migration jobs. The runtime role must not own tables, be superuser, or have `BYPASSRLS`. The app does not use Supabase browser `anon` or `authenticated` roles for its own data access.
 
-## 2. Configure environment
+## 3. Configure migration and runtime connection strings
 
-Copy `.env.example` to `.env.local` and set:
-- `DATABASE_URL`: runtime connection for exgarasi_app (use Cloudflare Hyperdrive connection string where applicable).
-- `MIGRATION_DATABASE_URL`: migration connection for exgarasi_migrator.
-- `AUTH_SECRET`: cryptographically random secret, at least 32 characters.
-- `APP_BASE_URL` and `NEXT_PUBLIC_APP_URL`.
-- Production email: `RESEND_API_KEY` and a verified `EMAIL_FROM` domain.
+In Supabase Dashboard → Project Settings → Database, copy the connection strings and set the username to the role created above. Use the host, port, database name and SSL settings shown by Supabase.
 
-Do not commit `.env.local` or production secrets.
+- `MIGRATION_DATABASE_URL`: `exgarasi_migrator` using direct connection or session pooler.
+- `DATABASE_URL`: `exgarasi_app` using direct connection or transaction pooler after testing.
+- `APP_BASE_URL` and `NEXT_PUBLIC_APP_URL`: application origin.
+- `AUTH_SECRET`: random secret with at least 32 characters.
+- `RESEND_API_KEY` and `EMAIL_FROM`: verified sender configuration for production verification emails.
 
-## 3. Install and migrate
+Set these in the hosting provider's encrypted environment settings. Do not place real secrets in `.env.example`.
+
+## 4. Apply migrations 0001–0007
+
+From the repository branch `feat/marketplace-foundation`:
 
 ```bash
-npm install
+npm ci
 npm run db:migrate
-npm run dev
 ```
 
-The SQL files in `database/` are the authoritative schema migrations and are applied in filename order. The runner records applied filenames in `public.schema_migrations`. Back up the database before applying migrations to an existing environment.
+The migration runner applies ordered SQL files and records each completed filename in `public.schema_migrations`. Migrations 0001–0007 include the marketplace schema, Better Auth tables, application identity mapping, RLS, stock functions, least-privilege policies and Supabase privilege hardening.
 
-After the first migration run, apply runtime table and column grants as the migration role:
+After migrations, apply the runtime grants as `exgarasi_migrator`/database owner:
 
 ```sql
 GRANT SELECT, INSERT ON ALL TABLES IN SCHEMA public TO exgarasi_app;
 GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA better_auth TO exgarasi_app;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO exgarasi_app;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA better_auth TO exgarasi_app;
 
 GRANT UPDATE (full_name, phone) ON public.users TO exgarasi_app;
 GRANT UPDATE (recipient_name, phone, address_line, village, district, city, province, postal_code, latitude, longitude, is_default)
@@ -70,13 +86,19 @@ REVOKE ALL ON public.schema_migrations FROM exgarasi_app;
 GRANT DELETE ON public.addresses, public.carts, public.cart_items, public.listings, public.listing_images TO exgarasi_app;
 ```
 
-Run these grants again after adding tables or mutable columns. The runtime role intentionally has no blanket UPDATE or DELETE access.
+Run these grants again when new tables or mutable columns are introduced. Do not grant blanket UPDATE or DELETE on application tables. Keep the runtime role's column grants minimal.
 
-## 4. Bootstrap the first administrator
+## 5. Supabase API exposure
 
-1. Register the first account through `/sign-up`.
-2. Verify the email in production.
-3. As the database migration/admin role, grant the initial super-admin role:
+In Supabase Dashboard → Project Settings → API, do not add the `better_auth` schema to the exposed Data API schemas. Keep it as a private schema for the server-side Better Auth adapter. The app's database access uses the server-only PostgreSQL connection, not browser-side Supabase JS.
+
+Migration 0007 revokes default PUBLIC function execution and table/sequence access in the public schema, then grants the application functions only to `exgarasi_app`. Never add the migration role or its password to the application runtime.
+
+## 6. Authentication bootstrap
+
+1. Configure production email with a verified Resend sender.
+2. Register the first user at `/sign-up` and verify the email.
+3. As a database operator, provision the first admin role:
 
 ```sql
 INSERT INTO public.user_roles (user_id, role)
@@ -86,29 +108,40 @@ WHERE lower(email) = lower('admin@your-domain.com')
 ON CONFLICT DO NOTHING;
 ```
 
-4. Sign in and open `/admin/dashboard`.
+4. Sign in and visit `/admin/dashboard`.
 
-Do not expose an admin-registration endpoint. Additional admin privileges must be granted through a controlled operator process and audited.
+Never provide a public admin-registration endpoint. Seller access remains invitation-only.
 
-## 5. Current application routes
+## 7. RLS and authentication smoke tests
 
-- `/`: public EXGARASI storefront landing page
-- `/sign-up`: buyer account registration
+Use a disposable development project only. After migrations and grants, run:
+
+```bash
+psql "$MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 -f database/tests/rls_auth_smoke.sql
+```
+
+The test creates two users, two stores and two addresses, switches to the non-owner `exgarasi_app` role, then verifies:
+- Buyer A can see only Buyer A's private store and address rows.
+- Buyer A cannot update Buyer B's store.
+- Better Auth identity maps to the correct application profile.
+
+The script rolls back its fixtures. Follow it with manual signup, email verification, login, session persistence and seller invitation acceptance tests in the dev project.
+
+## 8. Current routes
+
+- `/sign-up`: buyer registration
 - `/sign-in`: sign in
-- `/account/dashboard`: buyer account and order history
-- `/seller/accept-invitation?token=...`: invited seller onboarding
-- `/seller/dashboard`: seller's own stores and operational counts
-- `/admin/dashboard`: admin metrics and seller invitation form
-- `/api/admin/seller-invitations`: admin-only invitation endpoint
-- `/api/seller/accept-invitation`: authenticated one-time invitation acceptance
-- `/api/auth/[...all]`: Better Auth endpoints
+- `/account/dashboard`: buyer dashboard
+- `/seller/accept-invitation?token=...`: seller invitation acceptance
+- `/seller/dashboard`: seller overview
+- `/admin/dashboard`: admin metrics and seller invitations
 
-## 6. Important release gates
+## 9. Release gates
 
-- Add email delivery for seller invitation links; currently the admin UI returns a one-time URL for secure manual delivery.
-- Verify Better Auth adapter schema against the installed package version before first migration in staging.
-- Add automated RLS tests using the actual non-owner runtime role and two separate seller identities.
-- Test simultaneous stock reservation, release and consumption.
-- Add password reset, account recovery, rate limits, CAPTCHA/abuse controls and audit alerts.
-- Add payment and shipping provider adapters only after confirming marketplace split settlement and regulatory requirements.
-- Run backup restore tests and security review before production.
+- Verify the Better Auth Drizzle adapter schema against the exact installed package version.
+- Run the migration sequence and smoke test against a real disposable Supabase project.
+- Run tenant-isolation tests with two distinct seller identities.
+- Test simultaneous stock reservation, release, expiry and consumption.
+- Add invitation email delivery, password recovery, rate limiting and abuse controls.
+- Implement checkout, payment webhooks, shipping, refund and ledger reconciliation before real transactions.
+- Configure backups, restore drills, monitoring and a production incident process.
