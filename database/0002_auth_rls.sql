@@ -59,7 +59,7 @@ CREATE OR REPLACE FUNCTION public.sync_auth_user_to_profile()
 RETURNS trigger
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public, auth
+SET search_path = public, better_auth
 AS $$
 BEGIN
   INSERT INTO public.users (email, full_name, status, auth_user_id, email_verified_at)
