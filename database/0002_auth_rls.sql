@@ -97,7 +97,7 @@ AS $$
   SELECT EXISTS (
     SELECT 1 FROM public.user_roles
     WHERE user_id = public.app_current_user_id()
-      AND role IN ('admin','super_admin','support')
+      AND role IN ('admin','super_admin')
   )
 $$;
 
