@@ -100,13 +100,9 @@ Never provide a public admin-registration endpoint. Seller access remains invita
 
 ## 7. RLS and authentication smoke tests
 
-Use a disposable development project only. After migrations and grants, run:
+Use a disposable development project only. After migrations and grants, run the SQL files in `database/tests/` from Supabase SQL Editor or a one-off trusted database-owner connection. The tests create and roll back their fixtures, then switch to the non-owner `exgarasi_app` role. Never run these tests using the application runtime credentials.
 
-```bash
-psql "$MIGRATION_DATABASE_URL" -v ON_ERROR_STOP=1 -f database/tests/rls_auth_smoke.sql
-```
-
-The test creates two users, two stores and two addresses, switches to the non-owner `exgarasi_app` role, then verifies:
+The RLS test creates two users, two stores and two addresses, then verifies:
 - Buyer A can see only Buyer A's private store and address rows.
 - Buyer A cannot update Buyer B's store.
 - Better Auth identity maps to the correct application profile.
