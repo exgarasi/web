@@ -1,0 +1,23 @@
+-- EXGARASI migration 0009: index foreign keys used in joins and cascading operations.
+CREATE INDEX IF NOT EXISTS cart_items_listing_idx ON public.cart_items(listing_id);
+CREATE INDEX IF NOT EXISTS categories_parent_idx ON public.categories(parent_id);
+CREATE INDEX IF NOT EXISTS commission_rules_category_idx ON public.commission_rules(category_id);
+CREATE INDEX IF NOT EXISTS disputes_opened_by_idx ON public.disputes(opened_by);
+CREATE INDEX IF NOT EXISTS disputes_sub_order_idx ON public.disputes(sub_order_id);
+CREATE INDEX IF NOT EXISTS ledger_entries_sub_order_idx ON public.ledger_entries(sub_order_id);
+CREATE INDEX IF NOT EXISTS ledger_entries_payout_idx ON public.ledger_entries(payout_id);
+CREATE INDEX IF NOT EXISTS order_items_listing_idx ON public.order_items(listing_id);
+CREATE INDEX IF NOT EXISTS order_items_product_idx ON public.order_items(product_id);
+CREATE INDEX IF NOT EXISTS payouts_store_idx ON public.payouts(store_id);
+CREATE INDEX IF NOT EXISTS refunds_payment_idx ON public.refunds(payment_id);
+CREATE INDEX IF NOT EXISTS reviews_buyer_idx ON public.reviews(buyer_user_id);
+CREATE INDEX IF NOT EXISTS seller_invitations_accepted_by_idx ON public.seller_invitations(accepted_by);
+CREATE INDEX IF NOT EXISTS seller_invitations_invited_by_idx ON public.seller_invitations(invited_by);
+CREATE INDEX IF NOT EXISTS seller_verifications_reviewer_idx ON public.seller_verifications(reviewer_user_id);
+CREATE INDEX IF NOT EXISTS seller_verifications_store_idx ON public.seller_verifications(store_id);
+CREATE INDEX IF NOT EXISTS seller_verifications_submitter_idx ON public.seller_verifications(submitted_by);
+CREATE INDEX IF NOT EXISTS stock_movements_actor_idx ON public.stock_movements(actor_user_id);
+CREATE INDEX IF NOT EXISTS stock_reservations_listing_idx ON public.stock_reservations(listing_id);
+CREATE INDEX IF NOT EXISTS stock_reservations_order_idx ON public.stock_reservations(order_id);
+CREATE INDEX IF NOT EXISTS store_members_user_idx ON public.store_members(user_id);
+CREATE INDEX IF NOT EXISTS vehicle_fitments_product_idx ON public.vehicle_fitments(product_id);
