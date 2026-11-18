@@ -187,3 +187,24 @@ GRANT EXECUTE ON FUNCTION public.app_adjust_inventory(uuid,integer,text) TO PUBL
 GRANT EXECUTE ON FUNCTION public.app_reserve_stock(uuid,integer,uuid,integer) TO PUBLIC;
 GRANT EXECUTE ON FUNCTION public.app_release_stock(uuid) TO PUBLIC;
 GRANT EXECUTE ON FUNCTION public.app_consume_stock(uuid) TO PUBLIC;
+
+-- Every listing starts with an explicit zero-stock inventory row.
+CREATE OR REPLACE FUNCTION public.app_create_listing_inventory()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  INSERT INTO public.inventories(listing_id,physical_stock,reserved_stock)
+  VALUES(NEW.id,0,0)
+  ON CONFLICT (listing_id) DO NOTHING;
+  RETURN NEW;
+END;
+$$;
+CREATE TRIGGER listings_create_inventory
+AFTER INSERT ON public.listings
+FOR EACH ROW EXECUTE FUNCTION public.app_create_listing_inventory();
+INSERT INTO public.inventories(listing_id,physical_stock,reserved_stock)
+SELECT id,0,0 FROM public.listings
+ON CONFLICT (listing_id) DO NOTHING;
