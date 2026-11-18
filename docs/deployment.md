@@ -15,6 +15,7 @@ CREATE ROLE exgarasi_app LOGIN PASSWORD 'REPLACE_WITH_SECRET'
   NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS;
 
 GRANT CONNECT ON DATABASE exgarasi TO exgarasi_migrator, exgarasi_app;
+CREATE SCHEMA IF NOT EXISTS auth AUTHORIZATION exgarasi_migrator;
 GRANT USAGE ON SCHEMA public, auth TO exgarasi_app;
 GRANT SELECT, INSERT ON ALL TABLES IN SCHEMA public TO exgarasi_app;
 GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA auth TO exgarasi_app;
@@ -29,6 +30,7 @@ GRANT UPDATE (title_override, description_override, condition, price_amount, wei
   ON public.listings TO exgarasi_app;
 GRANT UPDATE (status) ON public.carts TO exgarasi_app;
 GRANT UPDATE (quantity) ON public.cart_items TO exgarasi_app;
+REVOKE INSERT, UPDATE, DELETE ON public.user_roles FROM exgarasi_app;
 GRANT DELETE ON public.addresses, public.carts, public.cart_items, public.listings, public.listing_images TO exgarasi_app;
 
 ALTER DEFAULT PRIVILEGES FOR ROLE exgarasi_migrator IN SCHEMA public
