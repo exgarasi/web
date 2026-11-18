@@ -16,17 +16,28 @@ CREATE ROLE exgarasi_app LOGIN PASSWORD 'REPLACE_WITH_SECRET'
 
 GRANT CONNECT ON DATABASE exgarasi TO exgarasi_migrator, exgarasi_app;
 GRANT USAGE ON SCHEMA public, auth TO exgarasi_app;
-GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO exgarasi_app;
-GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO exgarasi_app;
+GRANT SELECT, INSERT ON ALL TABLES IN SCHEMA public TO exgarasi_app;
 GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA auth TO exgarasi_app;
 
+-- Restrict updates to safe, user-editable columns only.
+GRANT UPDATE (full_name, phone) ON public.users TO exgarasi_app;
+GRANT UPDATE (recipient_name, phone, address_line, village, district, city, province, postal_code, latitude, longitude, is_default)
+  ON public.addresses TO exgarasi_app;
+GRANT UPDATE (name, description, logo_object_key, support_email, support_phone)
+  ON public.stores TO exgarasi_app;
+GRANT UPDATE (title_override, description_override, condition, price_amount, weight_grams, attributes)
+  ON public.listings TO exgarasi_app;
+GRANT UPDATE (status) ON public.carts TO exgarasi_app;
+GRANT UPDATE (quantity) ON public.cart_items TO exgarasi_app;
+GRANT DELETE ON public.addresses, public.carts, public.cart_items, public.listings, public.listing_images TO exgarasi_app;
+
 ALTER DEFAULT PRIVILEGES FOR ROLE exgarasi_migrator IN SCHEMA public
-  GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO exgarasi_app;
+  GRANT SELECT, INSERT ON TABLES TO exgarasi_app;
 ALTER DEFAULT PRIVILEGES FOR ROLE exgarasi_migrator IN SCHEMA auth
   GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO exgarasi_app;
 ```
 
-The migration role should own the tables and security-definer functions. Never run the application using the migration/owner role. RLS is not a security boundary if the runtime role owns the tables or has BYPASSRLS.
+The migration role should own the tables and security-definer functions. Never run the application using the migration/owner role. RLS is not a security boundary if the runtime role owns the tables or has BYPASSRLS. Do not add blanket UPDATE or DELETE grants to the runtime role: the column-level grants above are deliberate. When adding a new mutable feature, add the smallest required column grants and a matching RLS policy.
 
 ## 2. Configure environment
 
