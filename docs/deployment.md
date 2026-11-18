@@ -17,22 +17,8 @@ CREATE ROLE exgarasi_app LOGIN PASSWORD 'REPLACE_WITH_SECRET'
 GRANT CONNECT ON DATABASE exgarasi TO exgarasi_migrator, exgarasi_app;
 CREATE SCHEMA IF NOT EXISTS auth AUTHORIZATION exgarasi_migrator;
 GRANT USAGE ON SCHEMA public, auth TO exgarasi_app;
-GRANT SELECT, INSERT ON ALL TABLES IN SCHEMA public TO exgarasi_app;
-GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA auth TO exgarasi_app;
 
--- Restrict updates to safe, user-editable columns only.
-GRANT UPDATE (full_name, phone) ON public.users TO exgarasi_app;
-GRANT UPDATE (recipient_name, phone, address_line, village, district, city, province, postal_code, latitude, longitude, is_default)
-  ON public.addresses TO exgarasi_app;
-GRANT UPDATE (name, description, logo_object_key, support_email, support_phone)
-  ON public.stores TO exgarasi_app;
-GRANT UPDATE (title_override, description_override, condition, price_amount, weight_grams, attributes)
-  ON public.listings TO exgarasi_app;
-GRANT UPDATE (status) ON public.carts TO exgarasi_app;
-GRANT UPDATE (quantity) ON public.cart_items TO exgarasi_app;
-REVOKE INSERT, UPDATE, DELETE ON public.user_roles FROM exgarasi_app;
-GRANT DELETE ON public.addresses, public.carts, public.cart_items, public.listings, public.listing_images TO exgarasi_app;
-
+-- Default privileges apply to tables created by the migration owner in future migrations.
 ALTER DEFAULT PRIVILEGES FOR ROLE exgarasi_migrator IN SCHEMA public
   GRANT SELECT, INSERT ON TABLES TO exgarasi_app;
 ALTER DEFAULT PRIVILEGES FOR ROLE exgarasi_migrator IN SCHEMA auth
@@ -61,6 +47,27 @@ npm run dev
 ```
 
 The SQL files in `database/` are the authoritative schema migrations and are applied in filename order. The runner records applied filenames in `public.schema_migrations`. Back up the database before applying migrations to an existing environment.
+
+After the first migration run, apply runtime table and column grants as the migration role:
+
+```sql
+GRANT SELECT, INSERT ON ALL TABLES IN SCHEMA public TO exgarasi_app;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA auth TO exgarasi_app;
+
+GRANT UPDATE (full_name, phone) ON public.users TO exgarasi_app;
+GRANT UPDATE (recipient_name, phone, address_line, village, district, city, province, postal_code, latitude, longitude, is_default)
+  ON public.addresses TO exgarasi_app;
+GRANT UPDATE (name, description, logo_object_key, support_email, support_phone)
+  ON public.stores TO exgarasi_app;
+GRANT UPDATE (title_override, description_override, condition, price_amount, weight_grams, attributes)
+  ON public.listings TO exgarasi_app;
+GRANT UPDATE (status) ON public.carts TO exgarasi_app;
+GRANT UPDATE (quantity) ON public.cart_items TO exgarasi_app;
+REVOKE INSERT, UPDATE, DELETE ON public.user_roles FROM exgarasi_app;
+GRANT DELETE ON public.addresses, public.carts, public.cart_items, public.listings, public.listing_images TO exgarasi_app;
+```
+
+Run these grants again after adding tables or mutable columns. The runtime role intentionally has no blanket UPDATE or DELETE access.
 
 ## 4. Bootstrap the first administrator
 
