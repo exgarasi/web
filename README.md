@@ -11,7 +11,8 @@ Hybrid automotive marketplace for EXGARASI Official inventory and invited partne
 ## Stack
 - Next.js App Router + TypeScript
 - Tailwind CSS
-- PostgreSQL + Drizzle ORM (Better Auth adapter)
+- Supabase PostgreSQL via Cloudflare Hyperdrive + Drizzle ORM (Better Auth adapter)
+- Cloudflare Workers + OpenNext adapter
 - Better Auth email/password sessions
 - Cloudflare R2 for product media
 - PostgreSQL row-level security for store and buyer isolation
@@ -20,12 +21,10 @@ Hybrid automotive marketplace for EXGARASI Official inventory and invited partne
 The `feat/marketplace-foundation` branch contains the greenfield application foundation, SQL migrations, authentication, seller invitation flow, and initial buyer/seller/admin dashboards. This is an implementation branch, not a production-ready marketplace. Payment, shipping, order checkout, finance settlement, full catalog management and email delivery for seller invitations are still release work.
 
 ## Local setup
-1. Provision PostgreSQL using the separate migrator and runtime roles in `docs/deployment.md`.
-2. Copy `.env.example` to `.env.local` and configure both database URLs and `AUTH_SECRET`.
-3. Install dependencies: `npm install`.
-4. Apply SQL migrations: `npm run db:migrate`.
-5. Apply the runtime table/column grants described in `docs/deployment.md`.
-6. Start the app: `npm run dev`.
+1. Configure the Supabase `exgarasi_app` role and Cloudflare Hyperdrive binding using `docs/deployment.md`.
+2. Install dependencies with `npm install` and create `.dev.vars` from `.dev.vars.example`.
+3. Run local development with `npm run dev`.
+4. Build and preview the Workers runtime with `npm run cf:preview`.
 
 ## Routes
 - `/`: public landing page
