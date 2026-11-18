@@ -13,7 +13,7 @@ try {
   )`;
   const directory = path.join(process.cwd(), "database");
   const files = (await readdir(directory))
-    .filter((name) => /^000[0-9]+_.*\.sql$/.test(name))
+    .filter((name) => /^[0-9]{4}_.*\.sql$/.test(name))
     .sort();
 
   for (const filename of files) {
