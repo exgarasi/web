@@ -3,12 +3,9 @@ import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { getDatabase } from "@/db";
 import { authSchemaTables } from "@/db/auth-schema";
 
-type RuntimeEnv = {
-};
-
-async function sendVerificationEmail(to: string, url: string, env: RuntimeEnv) {
-  const apiKey = env.RESEND_API_KEY;
-  const from = env.EMAIL_FROM;
+async function sendVerificationEmail(to: string, url: string) {
+  const apiKey = process.env.RESEND_API_KEY;
+  const from = process.env.EMAIL_FROM;
   if (!apiKey || !from) {
     throw new Error("RESEND_API_KEY and EMAIL_FROM must be configured to send verification emails.");
   }
@@ -48,7 +45,7 @@ export async function getAuth() {
       sendOnSignUp: production,
       autoSignInAfterVerification: true,
       expiresIn: 60 * 60,
-      sendVerificationEmail: async ({ user, url }) => sendVerificationEmail(user.email, url, runtimeEnv),
+      sendVerificationEmail: async ({ user, url }) => sendVerificationEmail(user.email, url),
     },
     session: {
       expiresIn: 60 * 60 * 24 * 14,
