@@ -2,7 +2,7 @@
 
 ## 1. Provision PostgreSQL roles
 
-Use a managed PostgreSQL service. Create two separate roles:
+For the first MVP, deploy Next.js on a standard Node.js runtime (for example Vercel, Railway, or Render). Keep Cloudflare for DNS, CDN, WAF and R2. Do not deploy this current module-level PostgreSQL client to Workers until its request-scoped connection lifecycle and Better Auth adapter are validated with Hyperdrive. Use a managed PostgreSQL service. Create two separate roles:
 - `exgarasi_migrator`: schema owner / migration credentials; use only in deployment or migration jobs.
 - `exgarasi_app`: application runtime login; must be NOSUPERUSER, NOBYPASSRLS, and must not own application tables.
 
@@ -66,6 +66,7 @@ GRANT UPDATE (title_override, description_override, condition, price_amount, wei
 GRANT UPDATE (status) ON public.carts TO exgarasi_app;
 GRANT UPDATE (quantity) ON public.cart_items TO exgarasi_app;
 REVOKE INSERT, UPDATE, DELETE ON public.user_roles FROM exgarasi_app;
+REVOKE ALL ON public.schema_migrations FROM exgarasi_app;
 GRANT DELETE ON public.addresses, public.carts, public.cart_items, public.listings, public.listing_images TO exgarasi_app;
 ```
 
