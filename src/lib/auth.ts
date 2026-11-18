@@ -28,9 +28,7 @@ async function sendVerificationEmail(to: string, url: string, env: RuntimeEnv) {
       html: `<p>Welcome to EXGARASI.</p><p><a href="${url}">Verify your email address</a></p><p>This link expires according to the verification policy.</p>`,
     }),
   });
-  if (!response.ok) {
-    throw new Error(`Email delivery failed: ${response.status}`);
-  }
+  if (!response.ok) throw new Error(`Email delivery failed: ${response.status}`);
 }
 
 export async function getAuth() {
@@ -41,17 +39,13 @@ export async function getAuth() {
     throw new Error("AUTH_SECRET must be configured with at least 32 characters.");
   }
 
-  const { db } = await getDatabase();
+  const database = await getDatabase();
   const production = process.env.NODE_ENV === "production";
-
-  return betterAuth({
+  const auth = betterAuth({
     appName: "EXGARASI",
     secret,
     baseURL: runtimeEnv.APP_BASE_URL ?? runtimeEnv.NEXT_PUBLIC_APP_URL,
-    database: drizzleAdapter(db, {
-      provider: "pg",
-      schema: authSchemaTables,
-    }),
+    database: drizzleAdapter(database.db, { provider: "pg", schema: authSchemaTables }),
     emailAndPassword: {
       enabled: true,
       requireEmailVerification: production,
@@ -62,9 +56,7 @@ export async function getAuth() {
       sendOnSignUp: production,
       autoSignInAfterVerification: true,
       expiresIn: 60 * 60,
-      sendVerificationEmail: async ({ user, url }) => {
-        await sendVerificationEmail(user.email, url, runtimeEnv);
-      },
+      sendVerificationEmail: async ({ user, url }) => sendVerificationEmail(user.email, url, runtimeEnv),
     },
     session: {
       expiresIn: 60 * 60 * 24 * 14,
@@ -73,11 +65,9 @@ export async function getAuth() {
     },
     advanced: {
       useSecureCookies: production,
-      defaultCookieAttributes: {
-        httpOnly: true,
-        sameSite: "lax",
-        secure: production,
-      },
+      defaultCookieAttributes: { httpOnly: true, sameSite: "lax", secure: production },
     },
   });
+
+  return { auth, close: database.close };
 }
