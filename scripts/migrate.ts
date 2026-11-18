@@ -1,4 +1,4 @@
-import { readdir } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import postgres from "postgres";
 
@@ -23,8 +23,9 @@ try {
       continue;
     }
     process.stdout.write("apply " + filename + "\n");
+    const contents = await readFile(path.join(directory, filename), "utf8");
     await sql.begin(async (tx) => {
-      await tx.file(path.join(directory, filename));
+      await tx.unsafe(contents).simple();
       await tx`insert into public.schema_migrations(filename) values (${filename})`;
     });
   }
