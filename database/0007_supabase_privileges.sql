@@ -3,9 +3,6 @@
 -- inherit execute privileges on security-definer application functions.
 REVOKE EXECUTE ON ALL FUNCTIONS IN SCHEMA public FROM PUBLIC;
 
-ALTER DEFAULT PRIVILEGES FOR ROLE exgarasi_migrator IN SCHEMA public
-  REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC;
-
 GRANT EXECUTE ON FUNCTION public.app_profile_id_for_auth_user(text) TO exgarasi_app;
 GRANT EXECUTE ON FUNCTION public.app_accept_seller_invitation(text,text,text) TO exgarasi_app;
 GRANT EXECUTE ON FUNCTION public.app_current_user_id() TO exgarasi_app;
