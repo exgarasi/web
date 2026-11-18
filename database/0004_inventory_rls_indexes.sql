@@ -99,10 +99,17 @@ BEGIN
   IF current_id IS NULL OR requested_quantity <= 0 OR reservation_minutes < 1 OR reservation_minutes > 120 THEN
     RAISE EXCEPTION 'INVALID_RESERVATION_REQUEST';
   END IF;
-  IF target_order_id IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM public.orders WHERE id = target_order_id AND buyer_user_id = current_id
-  ) AND NOT public.app_is_admin() THEN
-    RAISE EXCEPTION 'ORDER_ACCESS_DENIED';
+  IF target_order_id IS NULL OR NOT EXISTS (
+    SELECT 1
+    FROM public.orders o
+    JOIN public.sub_orders so ON so.order_id = o.id
+    JOIN public.order_items oi ON oi.sub_order_id = so.id
+    WHERE o.id = target_order_id
+      AND oi.listing_id = target_listing_id
+      AND oi.quantity = requested_quantity
+      AND (o.buyer_user_id = current_id OR public.app_is_admin())
+  ) THEN
+    RAISE EXCEPTION 'ORDER_ITEM_REQUIRED_FOR_STOCK_RESERVATION';
   END IF;
   UPDATE public.inventories i
     SET reserved_stock = reserved_stock + requested_quantity, updated_at = now()
