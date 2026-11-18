@@ -1,10 +1,10 @@
 -- EXGARASI migration 0002: auth, authorization and row-level security.
 -- Apply after 0001 in a fresh PostgreSQL database. Review in staging before production.
 
-CREATE SCHEMA IF NOT EXISTS auth;
+CREATE SCHEMA IF NOT EXISTS better_auth;
 
 -- Better Auth canonical identity tables. Public application users are linked by auth_user_id.
-CREATE TABLE auth."user" (
+CREATE TABLE better_auth."user" (
   id text PRIMARY KEY,
   name text NOT NULL,
   email text NOT NULL UNIQUE,
@@ -13,7 +13,7 @@ CREATE TABLE auth."user" (
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
-CREATE TABLE auth.session (
+CREATE TABLE better_auth.session (
   id text PRIMARY KEY,
   expires_at timestamptz NOT NULL,
   token text NOT NULL UNIQUE,
@@ -21,14 +21,14 @@ CREATE TABLE auth.session (
   updated_at timestamptz NOT NULL DEFAULT now(),
   ip_address text,
   user_agent text,
-  user_id text NOT NULL REFERENCES auth."user"(id) ON DELETE CASCADE
+  user_id text NOT NULL REFERENCES better_auth."user"(id) ON DELETE CASCADE
 );
-CREATE INDEX auth_session_user_idx ON auth.session(user_id);
-CREATE TABLE auth.account (
+CREATE INDEX auth_session_user_idx ON better_auth.session(user_id);
+CREATE TABLE better_auth.account (
   id text PRIMARY KEY,
   account_id text NOT NULL,
   provider_id text NOT NULL,
-  user_id text NOT NULL REFERENCES auth."user"(id) ON DELETE CASCADE,
+  user_id text NOT NULL REFERENCES better_auth."user"(id) ON DELETE CASCADE,
   access_token text,
   refresh_token text,
   id_token text,
@@ -40,8 +40,8 @@ CREATE TABLE auth.account (
   updated_at timestamptz NOT NULL DEFAULT now(),
   UNIQUE(provider_id, account_id)
 );
-CREATE INDEX auth_account_user_idx ON auth.account(user_id);
-CREATE TABLE auth.verification (
+CREATE INDEX auth_account_user_idx ON better_auth.account(user_id);
+CREATE TABLE better_auth.verification (
   id text PRIMARY KEY,
   identifier text NOT NULL,
   value text NOT NULL,
@@ -49,7 +49,7 @@ CREATE TABLE auth.verification (
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
-CREATE INDEX auth_verification_identifier_idx ON auth.verification(identifier);
+CREATE INDEX auth_verification_identifier_idx ON better_auth.verification(identifier);
 
 ALTER TABLE users ADD COLUMN auth_user_id text UNIQUE;
 ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL;
@@ -77,7 +77,7 @@ BEGIN
 END;
 $$;
 CREATE TRIGGER auth_user_profile_sync
-AFTER INSERT OR UPDATE ON auth."user"
+AFTER INSERT OR UPDATE ON better_auth."user"
 FOR EACH ROW EXECUTE FUNCTION public.sync_auth_user_to_profile();
 
 -- Session-scoped identity is set only by trusted server code inside a transaction:
