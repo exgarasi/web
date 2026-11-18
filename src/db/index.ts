@@ -1,27 +1,29 @@
+import { getCloudflareContext } from "@opennextjs/cloudflare";
 import postgres from "postgres";
 import { drizzle } from "drizzle-orm/postgres-js";
 import { authSchemaTables } from "./auth-schema";
 
-const connectionString = process.env.DATABASE_URL;
+type HyperdriveBinding = { connectionString: string };
+type RuntimeEnv = { HYPERDRIVE?: HyperdriveBinding; DATABASE_URL?: string };
 
-if (!connectionString) {
-  throw new Error("DATABASE_URL is required to connect to PostgreSQL.");
-}
+export async function getDatabase() {
+  const { env } = getCloudflareContext();
+  const runtimeEnv = env as unknown as RuntimeEnv;
+  const connectionString = runtimeEnv.HYPERDRIVE?.connectionString ?? runtimeEnv.DATABASE_URL;
 
-const globalForDb = globalThis as unknown as {
-  sqlClient?: ReturnType<typeof postgres>;
-};
+  if (!connectionString) {
+    throw new Error("Cloudflare HYPERDRIVE binding is missing. Configure it in wrangler.jsonc.");
+  }
 
-const client =
-  globalForDb.sqlClient ??
-  postgres(connectionString, {
-    max: process.env.NODE_ENV === "production" ? 5 : 1,
-    prepare: false,
+  // Hyperdrive owns the shared connection pool. Keep the per-isolate client small.
+  const client = postgres(connectionString, {
+    max: 5,
+    fetch_types: false,
+    prepare: true,
   });
 
-if (process.env.NODE_ENV !== "production") {
-  globalForDb.sqlClient = client;
+  return {
+    sql: client,
+    db: drizzle(client, { schema: authSchemaTables }),
+  };
 }
-
-export const sql = client;
-export const db = drizzle(client, { schema: authSchemaTables });
