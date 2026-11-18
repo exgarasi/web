@@ -2,8 +2,8 @@ import { readdir } from "node:fs/promises";
 import path from "node:path";
 import postgres from "postgres";
 
-const connectionString = process.env.DATABASE_URL;
-if (!connectionString) throw new Error("DATABASE_URL is required.");
+const connectionString = process.env.MIGRATION_DATABASE_URL ?? process.env.DATABASE_URL;
+if (!connectionString) throw new Error("MIGRATION_DATABASE_URL is required (DATABASE_URL fallback is for local development only).");
 
 const sql = postgres(connectionString, { max: 1, prepare: false });
 try {
