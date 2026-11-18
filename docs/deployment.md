@@ -17,13 +17,13 @@ CREATE ROLE exgarasi_app LOGIN PASSWORD 'REPLACE_WITH_SECRET'
 GRANT CONNECT ON DATABASE exgarasi TO exgarasi_migrator, exgarasi_app;
 GRANT CREATE ON DATABASE exgarasi TO exgarasi_migrator;
 GRANT CREATE ON SCHEMA public TO exgarasi_migrator;
-CREATE SCHEMA IF NOT EXISTS auth AUTHORIZATION exgarasi_migrator;
-GRANT USAGE ON SCHEMA public, auth TO exgarasi_app;
+CREATE SCHEMA IF NOT EXISTS better_auth AUTHORIZATION exgarasi_migrator;
+GRANT USAGE ON SCHEMA public, better_auth TO exgarasi_app;
 
 -- Default privileges apply to tables created by the migration owner in future migrations.
 ALTER DEFAULT PRIVILEGES FOR ROLE exgarasi_migrator IN SCHEMA public
   GRANT SELECT, INSERT ON TABLES TO exgarasi_app;
-ALTER DEFAULT PRIVILEGES FOR ROLE exgarasi_migrator IN SCHEMA auth
+ALTER DEFAULT PRIVILEGES FOR ROLE exgarasi_migrator IN SCHEMA better_auth
   GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO exgarasi_app;
 ```
 
@@ -54,7 +54,7 @@ After the first migration run, apply runtime table and column grants as the migr
 
 ```sql
 GRANT SELECT, INSERT ON ALL TABLES IN SCHEMA public TO exgarasi_app;
-GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA auth TO exgarasi_app;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA better_auth TO exgarasi_app;
 
 GRANT UPDATE (full_name, phone) ON public.users TO exgarasi_app;
 GRANT UPDATE (recipient_name, phone, address_line, village, district, city, province, postal_code, latitude, longitude, is_default)
