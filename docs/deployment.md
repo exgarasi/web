@@ -15,6 +15,8 @@ CREATE ROLE exgarasi_app LOGIN PASSWORD 'REPLACE_WITH_SECRET'
   NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS;
 
 GRANT CONNECT ON DATABASE exgarasi TO exgarasi_migrator, exgarasi_app;
+GRANT CREATE ON DATABASE exgarasi TO exgarasi_migrator;
+GRANT CREATE ON SCHEMA public TO exgarasi_migrator;
 CREATE SCHEMA IF NOT EXISTS auth AUTHORIZATION exgarasi_migrator;
 GRANT USAGE ON SCHEMA public, auth TO exgarasi_app;
 
