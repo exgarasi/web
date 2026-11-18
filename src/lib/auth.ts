@@ -5,11 +5,6 @@ import { getDatabase } from "@/db";
 import { authSchemaTables } from "@/db/auth-schema";
 
 type RuntimeEnv = {
-  AUTH_SECRET?: string;
-  APP_BASE_URL?: string;
-  NEXT_PUBLIC_APP_URL?: string;
-  RESEND_API_KEY?: string;
-  EMAIL_FROM?: string;
 };
 
 async function sendVerificationEmail(to: string, url: string, env: RuntimeEnv) {
@@ -34,7 +29,7 @@ async function sendVerificationEmail(to: string, url: string, env: RuntimeEnv) {
 export async function getAuth() {
   const { env } = getCloudflareContext();
   const runtimeEnv = env as unknown as RuntimeEnv;
-  const secret = runtimeEnv.AUTH_SECRET;
+  const secret = process.env.AUTH_SECRET;
   if (!secret || secret.length < 32) {
     throw new Error("AUTH_SECRET must be configured with at least 32 characters.");
   }
@@ -44,7 +39,7 @@ export async function getAuth() {
   const auth = betterAuth({
     appName: "EXGARASI",
     secret,
-    baseURL: runtimeEnv.APP_BASE_URL ?? runtimeEnv.NEXT_PUBLIC_APP_URL,
+    baseURL: process.env.APP_BASE_URL ?? process.env.NEXT_PUBLIC_APP_URL,
     database: drizzleAdapter(database.db, { provider: "pg", schema: authSchemaTables }),
     emailAndPassword: {
       enabled: true,
