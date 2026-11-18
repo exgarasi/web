@@ -1,6 +1,5 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
-import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { getDatabase } from "@/db";
 import { authSchemaTables } from "@/db/auth-schema";
 
@@ -27,8 +26,6 @@ async function sendVerificationEmail(to: string, url: string, env: RuntimeEnv) {
 }
 
 export async function getAuth() {
-  const { env } = getCloudflareContext();
-  const runtimeEnv = env as unknown as RuntimeEnv;
   const secret = process.env.AUTH_SECRET;
   if (!secret || secret.length < 32) {
     throw new Error("AUTH_SECRET must be configured with at least 32 characters.");
