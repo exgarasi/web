@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { LanguageSwitcher, useLocale } from "@/components/locale-provider";
+import { CurrencySwitcher, LanguageSwitcher, useLocale } from "@/components/locale-provider";
 
 export default function HomePage() {
   const { locale } = useLocale();
@@ -35,6 +35,7 @@ export default function HomePage() {
           </nav>
           <div className="flex items-center gap-2">
             <LanguageSwitcher />
+            <CurrencySwitcher />
             <Link href="/sign-in" className="rounded-full bg-gray-950 px-4 py-2.5 text-sm font-semibold text-white hover:bg-sky-600">{id ? "Masuk" : "Sign In"}</Link>
           </div>
         </div>
