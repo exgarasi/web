@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 const categories = [
   { number: "01", name: "Diecast & Collectibles", detail: "Miniatur, model cars, limited editions" },
   { number: "02", name: "Automotive Parts", detail: "Wheels, body kits, lighting, performance" },
@@ -16,9 +18,9 @@ export default function HomePage() {
     <main className="min-h-screen">
       <header className="border-b border-gray-200 bg-white">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
-          <a href="/" className="text-xl font-black tracking-[0.22em]">
+          <Link href="/" className="text-xl font-black tracking-[0.22em]">
             EXGARASI<span className="text-sky-500">.</span>
-          </a>
+          </Link>
           <nav className="hidden items-center gap-8 text-sm font-medium text-gray-600 md:flex">
             <a href="#categories" className="hover:text-sky-600">Kategori</a>
             <a href="#about" className="hover:text-sky-600">Tentang</a>
