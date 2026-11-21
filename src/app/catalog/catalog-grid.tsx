@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useLocale } from "@/components/locale-provider";
 
 export type CatalogProduct = {
@@ -15,6 +16,7 @@ export type CatalogProduct = {
   brandName: string | null;
   storeName: string;
   stock: number;
+  imageUrl?: string | null;
 };
 
 export function CatalogGrid({ products }: { products: CatalogProduct[] }) {
@@ -34,9 +36,9 @@ export function CatalogGrid({ products }: { products: CatalogProduct[] }) {
   return (
     <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4">
       {products.map((product) => (
-        <article key={product.id} className="overflow-hidden rounded-2xl border border-gray-200 bg-white transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-gray-200/60">
+        <Link key={product.id} href={`/catalog/${product.id}`} className="group block overflow-hidden rounded-2xl border border-gray-200 bg-white transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-gray-200/60">
           <div className="flex aspect-square items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
-            <span className="text-4xl font-black tracking-widest text-gray-300">EX</span>
+            {product.imageUrl ? <div role="img" aria-label={product.title} className="h-full w-full bg-contain bg-center bg-no-repeat" style={{ backgroundImage: `url("${product.imageUrl}")` }} /> : <span className="text-4xl font-black tracking-widest text-gray-300">EX</span>}
           </div>
           <div className="p-3 sm:p-4">
             <div className="flex flex-wrap gap-1.5">
@@ -48,7 +50,7 @@ export function CatalogGrid({ products }: { products: CatalogProduct[] }) {
             <p className="mt-3 text-sm font-bold text-[#008fe8]">{product.currency === "IDR" ? formatPrice(product.priceAmount) : new Intl.NumberFormat(currency === "USD" ? "en-US" : "id-ID", { style: "currency", currency: product.currency, maximumFractionDigits: 0 }).format(product.priceAmount)}</p>
             <p className="mt-1 text-[10px] text-gray-400">{id ? `Stok tersedia: ${product.stock}` : `Available stock: ${product.stock}`}</p>
           </div>
-        </article>
+        </Link>
       ))}
     </div>
   );
