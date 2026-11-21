@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 
 export type Locale = "id" | "en";
 export type Currency = "IDR" | "USD";
@@ -23,8 +23,10 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const savedLocale = window.localStorage.getItem("exgarasi-locale");
     const savedCurrency = window.localStorage.getItem("exgarasi-currency");
-    if (savedLocale === "id" || savedLocale === "en") setLocaleState(savedLocale);
-    if (savedCurrency === "IDR" || savedCurrency === "USD") setCurrencyState(savedCurrency);
+    queueMicrotask(() => {
+      if (savedLocale === "id" || savedLocale === "en") setLocaleState(savedLocale);
+      if (savedCurrency === "IDR" || savedCurrency === "USD") setCurrencyState(savedCurrency);
+    });
 
     const controller = new AbortController();
     fetch("https://open.er-api.com/v6/latest/IDR", { signal: controller.signal })
@@ -60,7 +62,7 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
     }).format(amountInIDR);
   };
 
-  const value = useMemo(() => ({
+  const value: LocaleContextValue = {
     locale,
     setLocale,
     toggleLocale: () => setLocale(locale === "id" ? "en" : "id"),
@@ -68,7 +70,7 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
     setCurrency,
     formatPrice,
     exchangeRate,
-  }), [locale, currency, exchangeRate]);
+  };
 
   return <LocaleContext.Provider value={value}>{children}</LocaleContext.Provider>;
 }
