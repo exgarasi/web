@@ -20,6 +20,9 @@ Hybrid automotive marketplace for EXGARASI Official inventory and invited partne
 ## Repository status
 The `feat/marketplace-foundation` branch contains the greenfield application foundation, SQL migrations, authentication, seller invitation flow, and initial buyer/seller/admin dashboards. This is an implementation branch, not a production-ready marketplace. Payment, shipping, order checkout, finance settlement, full catalog management and email delivery for seller invitations are still release work.
 
+## Deployment source
+Cloudflare production builds must use the `feat/marketplace-foundation` branch. The application manifest (`package.json`) is located at the repository root.
+
 ## Local setup
 1. Configure the Supabase `exgarasi_app` role and Cloudflare Hyperdrive binding using `docs/deployment.md`.
 2. Install dependencies with `npm install` and create `.dev.vars` from `.dev.vars.example`.
