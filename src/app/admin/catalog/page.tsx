@@ -39,7 +39,7 @@ export default async function AdminCatalogPage() {
       <section className="mx-auto max-w-7xl px-5 py-8">
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
           <div><p className="text-xs font-bold uppercase tracking-[.2em] text-[#0099ff]">Product management</p><h1 className="mt-2 text-3xl font-semibold tracking-tight">Katalog produk</h1><p className="mt-2 text-sm text-gray-500">Kelola listing produk EXGARASI dan partner seller.</p></div>
-          <Link href="/admin/catalog/new" className="inline-flex items-center justify-center gap-2 rounded-xl bg-gray-950 px-5 py-3 text-sm font-bold text-white hover:bg-sky-600"><PackagePlus size={17}/> Tambah produk</Link>
+          <span title="Toko resmi EXGARASI perlu dibuat terlebih dahulu" className="inline-flex cursor-not-allowed items-center justify-center gap-2 rounded-xl bg-gray-200 px-5 py-3 text-sm font-bold text-gray-500"><PackagePlus size={17}/> Tambah produk · segera</span>
         </div>
         <div className="mt-7 overflow-hidden rounded-2xl border border-gray-200 bg-white">
           <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4"><p className="text-sm font-semibold">Daftar listing</p><span className="text-xs text-gray-400">{products.length} listing terbaru · maks. 100</span></div>
