@@ -20,7 +20,7 @@ export const dynamic = "force-dynamic";
 
 const navigation = [
   { label: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard, active: true },
-  { label: "Katalog produk", icon: Package, soon: true },
+  { label: "Katalog produk", href: "/admin/catalog", icon: Package },
   { label: "Inventaris", icon: Boxes, soon: true },
   { label: "Penjualan", icon: ShoppingBag, soon: true },
   { label: "Pesanan", icon: ClipboardList, soon: true },
@@ -91,6 +91,10 @@ export default async function AdminDashboard() {
               const Icon = item.icon;
               return item.active ? (
                 <a key={item.label} href={item.href} className="flex items-center gap-3 rounded-xl bg-sky-50 px-3 py-2.5 text-sm font-semibold text-[#0088e6]">
+                  <Icon size={17} />{item.label}
+                </a>
+              ) : item.href ? (
+                <a key={item.label} href={item.href} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-sky-50 hover:text-sky-700">
                   <Icon size={17} />{item.label}
                 </a>
               ) : (
