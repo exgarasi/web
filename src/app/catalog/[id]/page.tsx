@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getDatabase } from "@/db";
-import { ProductDetail } from "./product-detail";
+import { ProductDetail } from "../product-detail";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
