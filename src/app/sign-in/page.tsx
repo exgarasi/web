@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { LanguageSwitcher, useLocale } from "@/components/locale-provider";
+import { CurrencySwitcher, LanguageSwitcher, useLocale } from "@/components/locale-provider";
 import { signIn } from "@/lib/auth-client";
 
 export default function SignInPage() {
@@ -31,6 +31,7 @@ export default function SignInPage() {
         <div className="flex items-center justify-between">
           <Link href="/" className="text-lg font-black tracking-[.2em]">EXGARASI<span className="text-sky-500">.</span></Link>
           <LanguageSwitcher />
+            <CurrencySwitcher />
         </div>
         <h1 className="mt-8 text-3xl font-black">{id ? "Selamat datang kembali." : "Welcome back."}</h1>
         <p className="mt-2 text-sm text-gray-500">{id ? "Masuk ke akun EXGARASI Anda." : "Sign in to your EXGARASI account."}</p>
