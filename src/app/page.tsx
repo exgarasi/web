@@ -54,7 +54,7 @@ export default function HomePage() {
               {id ? "Satu tempat untuk diecast, suku cadang, aksesori, dan koleksi otomotif dari EXGARASI Official maupun mitra pilihan." : "One destination for diecast, spare parts, accessories, and automotive collectibles from EXGARASI Official and selected partners."}
             </p>
             <div className="mt-10 flex flex-wrap gap-3">
-              <a href="#categories" className="rounded-full bg-sky-500 px-7 py-3.5 text-sm font-bold text-white hover:bg-sky-400">{id ? "Jelajahi kategori" : "Explore categories"}</a>
+              <Link href="/catalog" className="rounded-full bg-sky-500 px-7 py-3.5 text-sm font-bold text-white hover:bg-sky-400">{id ? "Lihat katalog" : "Browse catalog"}</Link>
               <a href="mailto:partner@exgarasi.com" className="rounded-full border border-white/25 px-7 py-3.5 text-sm font-bold text-white hover:bg-white/10">{id ? "Daftar sebagai mitra" : "Apply as a partner"}</a>
             </div>
           </div>
