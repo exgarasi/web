@@ -24,7 +24,8 @@ export default async function CatalogPage({ searchParams }: { searchParams: Sear
           l.condition::text as condition, l.attributes as listing_attributes,
           p.product_type, c.name as category_name, c.slug as category_slug,
           b.name as brand_name, s.name as store_name,
-          coalesce(i.available_stock, i.physical_stock - i.reserved_stock, 0)::int as stock
+          coalesce(i.available_stock, i.physical_stock - i.reserved_stock, 0)::int as stock,
+          (select li.object_key from public.listing_images li where li.listing_id = l.id order by li.sort_order asc, li.created_at asc limit 1) as image_url
         from public.listings l
         join public.products p on p.id = l.product_id
         join public.stores s on s.id = l.store_id
@@ -59,6 +60,7 @@ export default async function CatalogPage({ searchParams }: { searchParams: Sear
       brandName: row.brand_name ? String(row.brand_name) : null,
       storeName: String(row.store_name),
       stock: Number(row.stock ?? 0),
+      imageUrl: row.image_url && /^https?:\\/\\//i.test(String(row.image_url)) ? String(row.image_url) : null,
     }));
     categories = categoryRows.map((row) => ({ name: String(row.name), slug: String(row.slug) }));
   } catch (error) {
