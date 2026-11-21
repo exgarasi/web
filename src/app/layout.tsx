@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { LocaleProvider } from "@/components/locale-provider";
 
 export const metadata: Metadata = {
   title: {
-    default: "EXGARASI — Automotive Marketplace",
+    default: "EXGARASI — Marketplace Otomotif",
     template: "%s | EXGARASI",
   },
   description:
-    "Marketplace otomotif untuk diecast, spare parts, accessories, dan automotive collectibles.",
+    "Marketplace otomotif untuk diecast, suku cadang, aksesori, dan koleksi otomotif.",
   applicationName: "EXGARASI",
 };
 
@@ -16,7 +17,9 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="id">
-      <body>{children}</body>
+      <body>
+        <LocaleProvider>{children}</LocaleProvider>
+      </body>
     </html>
   );
 }
