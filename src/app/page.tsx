@@ -99,7 +99,7 @@ export default function HomePage() {
           <div className="flex items-center gap-2 sm:gap-3">
             <div className="hidden sm:block"><LanguageSwitcher /></div>
             <div className="hidden md:block"><CurrencySwitcher /></div>
-            <Link href="/sign-in" className="hidden rounded-full px-4 py-2.5 text-[12px] font-bold text-[#4b5563] transition hover:bg-[#f3f6fa] sm:inline-flex">{t.signIn}</Link>
+            <Link href="/sign-in" className="hidden min-h-10 items-center justify-center whitespace-nowrap rounded-full px-4 py-2.5 text-[12px] font-bold leading-none text-[#4b5563] transition hover:bg-[#f3f6fa] sm:inline-flex">{t.signIn}</Link>
             <Link href="/sign-up" className="inline-flex items-center gap-2 rounded-full bg-[#111318] px-5 py-3 text-[12px] font-bold text-white transition hover:bg-[#0099ff]">{t.register}<ArrowUpRight size={14}/></Link>
           </div>
         </div>
@@ -117,7 +117,7 @@ export default function HomePage() {
             <form action="/catalog" className="mt-10 flex max-w-[570px] items-center rounded-2xl border border-white/15 bg-white p-1.5 shadow-2xl shadow-black/20">
               <Search className="ml-4 shrink-0 text-[#7b8795]" size={18}/>
               <input name="q" placeholder={t.search} className="h-12 min-w-0 flex-1 bg-transparent px-3 text-[13px] text-[#151a22] outline-none placeholder:text-[#98a2b3]" />
-              <button className="flex h-12 shrink-0 items-center gap-2 rounded-xl bg-[#0099ff] px-5 text-[12px] font-bold text-white transition hover:bg-[#007fd6]">{locale === "id" ? "Cari" : "Search"}<ArrowRight size={15}/></button>
+              <button className="flex h-12 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[#0099ff] px-5 text-[12px] font-bold leading-none !text-white transition hover:bg-[#007fd6]">{locale === "id" ? "Cari" : "Search"}<ArrowRight size={15}/></button>
             </form>
             <div className="mt-7 flex flex-wrap gap-x-6 gap-y-3 text-[11px] font-medium text-[#c5cfda]">
               <span className="flex items-center gap-2"><ShieldCheck size={14} className="text-[#45b6ff]"/>{t.curated}</span>
@@ -159,7 +159,7 @@ export default function HomePage() {
 
       <section id="official" className="border-y border-[#edf0f3] bg-[#f7f9fc]">
         <div className="mx-auto grid max-w-[1440px] gap-12 px-5 py-24 sm:px-8 lg:grid-cols-[.85fr_1.15fr] lg:items-center lg:px-12 lg:py-28">
-          <div><p className="text-[10px] font-bold tracking-[.25em] text-[#0099ff]">02 / OFFICIAL STORE</p><h2 className="mt-4 text-4xl font-semibold leading-[1.08] tracking-[-.05em] sm:text-5xl">{t.official}<span className="text-[#0099ff]">.</span></h2><p className="mt-5 max-w-[430px] text-sm leading-7 text-[#778293]">{t.officialSub}</p><Link href="/catalog" className="mt-8 inline-flex items-center gap-2 rounded-full bg-[#111318] px-6 py-3.5 text-[11px] font-bold text-white transition hover:bg-[#0099ff]">{t.browse}<ArrowRight size={15}/></Link></div>
+          <div><p className="text-[10px] font-bold tracking-[.25em] text-[#0099ff]">02 / OFFICIAL STORE</p><h2 className="mt-4 text-4xl font-semibold leading-[1.08] tracking-[-.05em] sm:text-5xl">{t.official}<span className="text-[#0099ff]">.</span></h2><p className="mt-5 max-w-[430px] text-sm leading-7 text-[#778293]">{t.officialSub}</p><Link href="/catalog" className="mt-8 inline-flex min-h-12 items-center justify-center gap-2 whitespace-nowrap rounded-full bg-[#111318] px-6 py-3.5 text-[12px] font-bold leading-none !text-white transition hover:bg-[#0099ff]"><span>{t.browse}</span><ArrowRight size={15}/></Link></div>
           <div className="relative overflow-hidden rounded-[26px] bg-[#111a24] p-7 text-white sm:p-10">
             <div className="absolute -right-20 -top-28 h-80 w-80 rounded-full border border-white/10"/><div className="absolute -right-5 -top-16 h-56 w-56 rounded-full border border-white/10"/>
             <div className="relative"><div className="flex items-center justify-between"><span className="text-[10px] font-bold tracking-[.22em] text-[#8d9baa]">EXGARASI / SELECTED</span><span className="rounded-full bg-[#0099ff]/15 px-3 py-1.5 text-[9px] font-bold text-[#5dbdff]">OFFICIAL</span></div><div className="mt-14 grid grid-cols-2 gap-4"><div className="rounded-2xl border border-white/10 bg-white/[.05] p-5"><Store size={19} className="text-[#52b7ff]"/><p className="mt-7 text-sm font-semibold">{locale==="id"?"Toko resmi":"Official store"}</p><p className="mt-1 text-[10px] text-[#9ba8b6]">{locale==="id"?"Dikelola EXGARASI":"Operated by EXGARASI"}</p></div><div className="rounded-2xl border border-white/10 bg-white/[.05] p-5"><ShieldCheck size={19} className="text-[#52b7ff]"/><p className="mt-7 text-sm font-semibold">{locale==="id"?"Kurasi produk":"Product review"}</p><p className="mt-1 text-[10px] text-[#9ba8b6]">{locale==="id"?"Produk melalui proses tinjauan":"Products go through review"}</p></div></div></div>
