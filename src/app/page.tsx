@@ -150,9 +150,9 @@ export default function HomePage() {
         </div>
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {categories.map((item)=><Link key={item.no} href={`/catalog?category=${item.slug}`} className="group relative isolate min-h-[340px] overflow-hidden rounded-[22px] bg-[#131b25] text-white">
-            <div className="absolute inset-0 -z-20 bg-cover bg-center transition duration-700 group-hover:scale-105" style={{backgroundImage:`url('${item.image}')`,backgroundPosition:item.position}}/>
-            <div className="absolute inset-0 -z-10 bg-gradient-to-t from-[#080d13] via-[#080d13]/35 to-transparent"/>
-            <div className="flex h-full min-h-[340px] flex-col justify-between p-6"><div className="flex items-start justify-between"><span className="text-[10px] font-bold tracking-[.2em] text-white/75">{item.no} / CATEGORY</span><span className="flex h-9 w-9 items-center justify-center rounded-full border border-white/30 transition group-hover:border-[#0099ff] group-hover:bg-[#0099ff]"><ArrowUpRight size={16}/></span></div><div><h3 className="text-[22px] font-semibold tracking-tight">{item.name}</h3><p className="mt-2 max-w-[240px] text-[11px] leading-5 text-white/70">{item.desc}</p></div></div>
+            <div aria-hidden="true" className="absolute inset-0 z-0 bg-cover bg-center transition duration-700 group-hover:scale-105" style={{backgroundImage:`url('${item.image}')`,backgroundPosition:item.position}}/>
+            <div aria-hidden="true" className="absolute inset-0 z-10 bg-gradient-to-t from-[#080d13] via-[#080d13]/55 to-[#080d13]/10"/>
+            <div className="relative z-20 flex h-full min-h-[340px] flex-col justify-between p-6 text-white"><div className="flex items-start justify-between"><span className="text-[10px] font-bold tracking-[.2em] text-white/85">{item.no} / CATEGORY</span><span className="flex h-9 w-9 items-center justify-center rounded-full border border-white/45 text-white transition group-hover:border-[#0099ff] group-hover:bg-[#0099ff]"><ArrowUpRight size={16}/></span></div><div><h3 className="text-[22px] font-bold leading-tight tracking-tight text-white [text-shadow:0_1px_12px_rgba(0,0,0,.35)]">{item.name}</h3><p className="mt-2 max-w-[240px] text-[11px] leading-5 text-white/85">{item.desc}</p></div></div>
           </Link>)}
         </div>
       </section>
