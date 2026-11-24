@@ -23,10 +23,8 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const savedLocale = window.localStorage.getItem("exgarasi-locale");
     const savedCurrency = window.localStorage.getItem("exgarasi-currency");
-    queueMicrotask(() => {
-      if (savedLocale === "id" || savedLocale === "en") setLocaleState(savedLocale);
-      if (savedCurrency === "IDR" || savedCurrency === "USD") setCurrencyState(savedCurrency);
-    });
+    if (savedLocale === "id" || savedLocale === "en") setLocaleState(savedLocale);
+    if (savedCurrency === "IDR" || savedCurrency === "USD") setCurrencyState(savedCurrency);
 
     const controller = new AbortController();
     fetch("https://open.er-api.com/v6/latest/IDR", { signal: controller.signal })
@@ -88,9 +86,10 @@ export function LanguageSwitcher() {
       type="button"
       onClick={toggleLocale}
       aria-label={locale === "id" ? "Switch language to English" : "Ganti bahasa ke Indonesia"}
-      className="rounded-full border border-gray-300 bg-white px-3 py-2 text-xs font-bold text-gray-700 transition hover:border-sky-500 hover:text-sky-600"
+      className="inline-flex min-h-10 items-center justify-center gap-2 whitespace-nowrap rounded-full border border-[#0099ff] bg-white px-4 py-2 text-[13px] font-semibold leading-none text-[#087fd0] transition hover:bg-[#f0f8ff]"
     >
-      {locale === "id" ? "🇮🇩 ID" : "🇬🇧 EN"}
+      <span aria-hidden="true" className="text-[11px] font-medium tracking-wide opacity-75">{locale === "id" ? "ID" : "EN"}</span>
+      <span>{locale === "id" ? "Indonesia" : "English"}</span>
     </button>
   );
 }
@@ -98,14 +97,14 @@ export function LanguageSwitcher() {
 export function CurrencySwitcher() {
   const { currency, setCurrency } = useLocale();
   return (
-    <div className="flex items-center rounded-full border border-gray-300 bg-white p-1" aria-label="Pilih mata uang">
+    <div className="inline-flex min-h-10 items-center gap-0.5 rounded-full border border-[#e1e7ee] bg-white p-1" aria-label="Pilih mata uang">
       {(["IDR", "USD"] as const).map((item) => (
         <button
           key={item}
           type="button"
           onClick={() => setCurrency(item)}
           aria-pressed={currency === item}
-          className={`rounded-full px-3 py-1.5 text-xs font-bold transition ${currency === item ? "bg-gray-950 text-white" : "text-gray-600 hover:text-sky-600"}`}
+          className={`inline-flex min-h-8 items-center justify-center whitespace-nowrap rounded-full px-3 text-[11px] font-bold leading-none transition ${currency === item ? "bg-[#111318] text-white" : "text-[#667085] hover:text-[#0099ff]"}`}
         >
           {item}
         </button>
