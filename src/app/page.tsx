@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, ArrowUpRight, CarFront, ChevronDown, Menu, Search, ShieldCheck, Sparkles, Store, Tag, TimerReset } from "lucide-react";
+import { ArrowRight, ArrowUpRight, CarFront, Search, ShieldCheck, Sparkles, Store, Tag } from "lucide-react";
 import { useLocale, LanguageSwitcher, CurrencySwitcher } from "@/components/locale-provider";
 
 const copy = {
