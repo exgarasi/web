@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { ArrowLeft, ArrowUpRight, Search, SlidersHorizontal } from "lucide-react";
+import { LanguageSwitcher, CurrencySwitcher } from "@/components/locale-provider";
 import { getDatabase } from "@/db";
 import { CatalogGrid, type CatalogProduct } from "./catalog-grid";
 
@@ -70,38 +72,37 @@ export default async function CatalogPage({ searchParams }: { searchParams: Sear
   }
 
   return (
-    <main className="min-h-screen bg-[#f8fafc] text-gray-950">
-      <header className="border-b border-gray-200 bg-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-5">
-          <Link href="/" className="text-xl font-black tracking-[.2em]">EXGARASI<span className="text-sky-500">.</span></Link>
-          <Link href="/" className="text-sm font-semibold text-gray-600 hover:text-sky-600">Kembali ke beranda</Link>
+    <main className="min-h-screen bg-[#f7f9fc] text-[#111318]">
+      <header className="sticky top-0 z-30 border-b border-[#e9edf2] bg-white/95 backdrop-blur-xl">
+        <div className="mx-auto flex h-[72px] max-w-[1440px] items-center justify-between gap-4 px-5 sm:px-8 lg:px-12">
+          <Link href="/" className="flex items-center gap-2.5"><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#111318] text-[13px] font-black tracking-[-.08em] text-white">EX</span><span className="text-[18px] font-black tracking-[.16em]">EXGARASI<span className="text-[#0099ff]">.</span></span></Link>
+          <div className="flex items-center gap-2"><LanguageSwitcher/><div className="hidden sm:block"><CurrencySwitcher/></div><Link href="/sign-in" className="rounded-full bg-[#111318] px-5 py-2.5 text-[11px] font-bold text-white transition hover:bg-[#0099ff]">Masuk</Link></div>
         </div>
       </header>
-      <section className="mx-auto max-w-7xl px-5 py-10 sm:py-14">
-        <p className="text-xs font-bold uppercase tracking-[.22em] text-[#0099ff]">EXGARASI Marketplace</p>
-        <div className="mt-3 flex flex-col justify-between gap-5 md:flex-row md:items-end">
-          <div>
-            <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Katalog otomotif</h1>
-            <p className="mt-2 max-w-xl text-sm text-gray-500">Temukan diecast, suku cadang, aksesori, dan koleksi pilihan dari EXGARASI dan partner.</p>
+      <section className="border-b border-[#e9edf2] bg-white">
+        <div className="mx-auto max-w-[1440px] px-5 pb-9 pt-8 sm:px-8 sm:pb-12 lg:px-12">
+          <Link href="/" className="inline-flex items-center gap-2 text-[11px] font-semibold text-[#8993a1] transition hover:text-[#0099ff]"><ArrowLeft size={13}/> Beranda</Link>
+          <div className="mt-7 flex flex-col justify-between gap-7 lg:flex-row lg:items-end">
+            <div><p className="text-[10px] font-bold tracking-[.25em] text-[#0099ff]">EXGARASI / MARKETPLACE</p><h1 className="mt-3 text-4xl font-semibold tracking-[-.05em] sm:text-5xl">Temukan pilihanmu<span className="text-[#0099ff]">.</span></h1><p className="mt-3 max-w-xl text-[13px] leading-6 text-[#7c8796]">Jelajahi diecast, suku cadang, aksesori, dan koleksi otomotif dari EXGARASI Official dan partner pilihan.</p></div>
+            <form action="/catalog" className="flex w-full max-w-[460px] items-center rounded-xl border border-[#dfe5eb] bg-[#f8fafc] p-1.5 focus-within:border-[#0099ff] focus-within:bg-white">
+              <Search className="ml-3 shrink-0 text-[#9aa4b2]" size={17}/><input name="q" defaultValue={search} placeholder="Cari produk, SKU, atau merek..." className="h-10 min-w-0 flex-1 bg-transparent px-3 text-[12px] outline-none placeholder:text-[#9aa4b2]"/>{category?<input type="hidden" name="category" value={category}/>:null}<button className="rounded-lg bg-[#111318] px-4 py-3 text-[11px] font-bold text-white transition hover:bg-[#0099ff]">Cari</button>
+            </form>
           </div>
-          <form action="/catalog" className="flex w-full max-w-md gap-2">
-            <input name="q" defaultValue={search} placeholder="Cari produk, SKU, atau merek..." className="min-w-0 flex-1 rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm outline-none focus:border-sky-500" />
-            {category ? <input type="hidden" name="category" value={category} /> : null}
-            <button className="rounded-xl bg-gray-950 px-5 py-3 text-sm font-semibold text-white hover:bg-sky-600">Cari</button>
-          </form>
         </div>
-        <nav className="mt-8 flex gap-2 overflow-x-auto pb-2">
-          <Link href="/catalog" className={`shrink-0 rounded-full px-4 py-2 text-xs font-semibold ${!category ? "bg-gray-950 text-white" : "border border-gray-200 bg-white text-gray-600"}`}>Semua</Link>
-          {categories.map((item) => (
-            <Link key={item.slug} href={`/catalog?category=${encodeURIComponent(item.slug)}`} className={`shrink-0 rounded-full px-4 py-2 text-xs font-semibold ${category === item.slug ? "bg-gray-950 text-white" : "border border-gray-200 bg-white text-gray-600"}`}>{item.name}</Link>
-          ))}
-        </nav>
-        <div className="mt-7 flex items-center justify-between">
-          <p className="text-sm font-semibold">{products.length} produk ditemukan</p>
-          <p className="text-xs text-gray-400">Menampilkan maksimal 48 produk</p>
-        </div>
-        <CatalogGrid products={products} />
       </section>
+      <section className="mx-auto max-w-[1440px] px-5 py-8 sm:px-8 lg:px-12 lg:py-12">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[.14em] text-[#687384]"><SlidersHorizontal size={14} className="text-[#0099ff]"/> Kategori</div>
+          <p className="text-[10px] text-[#929cab]">{products.length} produk ditemukan</p>
+        </div>
+        <nav className="mt-4 flex gap-2 overflow-x-auto pb-2">
+          <Link href="/catalog" className={`shrink-0 rounded-full px-4 py-2.5 text-[10px] font-bold transition ${!category ? "bg-[#111318] text-white" : "border border-[#e0e5eb] bg-white text-[#687384] hover:border-[#0099ff] hover:text-[#0099ff]"}`}>Semua produk</Link>
+          {categories.map((item) => <Link key={item.slug} href={`/catalog?category=${encodeURIComponent(item.slug)}`} className={`shrink-0 rounded-full px-4 py-2.5 text-[10px] font-bold transition ${category === item.slug ? "bg-[#111318] text-white" : "border border-[#e0e5eb] bg-white text-[#687384] hover:border-[#0099ff] hover:text-[#0099ff]"}`}>{item.name}</Link>)}
+        </nav>
+        <div className="mt-7 flex items-center justify-between border-b border-[#e6ebf0] pb-4"><div><h2 className="text-lg font-semibold tracking-tight">Katalog pilihan</h2><p className="mt-1 text-[10px] text-[#929cab]">Produk aktif yang telah melalui proses persetujuan</p></div><Link href="/sign-up" className="hidden items-center gap-1.5 text-[10px] font-bold text-[#008fe8] hover:underline sm:inline-flex">Jual di EXGARASI<ArrowUpRight size={13}/></Link></div>
+        <CatalogGrid products={products}/>
+      </section>
+      <footer className="mt-10 border-t border-[#e9edf2] bg-white"><div className="mx-auto flex max-w-[1440px] flex-col justify-between gap-3 px-5 py-8 text-[10px] text-[#929cab] sm:flex-row sm:px-8 lg:px-12"><Link href="/" className="font-black tracking-[.18em] text-[#111318]">EXGARASI<span className="text-[#0099ff]">.</span></Link><span>© {new Date().getFullYear()} EXGARASI · Marketplace otomotif.</span></div></footer>
     </main>
   );
 }
