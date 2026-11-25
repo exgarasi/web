@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 type Store = { id: string; name: string; status: string };
 type Verification = { id: string; store_id: string; store_name: string; verification_type: string; status: string; review_note: string | null; submitted_at: string };
@@ -12,14 +12,24 @@ export function SellerVerificationForm({ stores }: { stores: Store[] }) {
   const [busy,setBusy] = useState(false);
   const [message,setMessage] = useState("");
 
-  const refresh = useCallback(async () => {
+  async function refresh() {
     const response = await fetch("/api/seller/verifications");
     if (response.ok) {
       const data = await response.json() as { verifications: Verification[] };
       setItems(data.verifications);
     }
+  }
+  useEffect(() => {
+    let cancelled=false;
+    fetch("/api/seller/verifications")
+      .then(async (response)=>{
+        if(!response.ok) return null;
+        return await response.json() as {verifications:Verification[]};
+      })
+      .then((data)=>{if(!cancelled&&data)setItems(data.verifications);})
+      .catch(()=>{});
+    return ()=>{cancelled=true;};
   }, []);
-  useEffect(() => { void refresh(); }, [refresh]);
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault(); setBusy(true); setMessage("");
