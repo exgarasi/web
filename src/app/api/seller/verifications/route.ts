@@ -23,10 +23,11 @@ export async function GET() {
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null) as { storeId?: string; verificationType?: string } | null;
   const storeId = body?.storeId?.trim();
-  const verificationType = body?.verificationType?.trim();
-  if (!storeId || !/^[0-9a-f-]{36}$/i.test(storeId) || !["individual","business"].includes(verificationType ?? "")) {
+  const requestedVerificationType = body?.verificationType?.trim();
+  if (!storeId || !/^[0-9a-f-]{36}$/i.test(storeId) || !["individual","business"].includes(requestedVerificationType ?? "")) {
     return NextResponse.json({ error: "Pilih toko dan jenis verifikasi yang valid." }, { status: 400 });
   }
+  const verificationType = requestedVerificationType as "individual" | "business";
   try {
     const result = await withAuthenticatedDb(async (tx) => {
       const stores = await tx`
