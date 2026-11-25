@@ -7,11 +7,12 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
   const { id } = await context.params;
   if (!/^[0-9a-f-]{36}$/i.test(id)) return NextResponse.json({ error: "Invalid verification ID." }, { status: 400 });
   const body = await request.json().catch(() => null) as { decision?: string; reviewNote?: string } | null;
-  const decision = body?.decision;
+  const requestedDecision = body?.decision;
   const reviewNote = body?.reviewNote?.trim() ?? "";
-  if (!["approved","rejected"].includes(decision ?? "") || reviewNote.length > 1000) {
+  if (!["approved","rejected"].includes(requestedDecision ?? "") || reviewNote.length > 1000) {
     return NextResponse.json({ error: "Keputusan atau catatan tidak valid." }, { status: 400 });
   }
+  const decision = requestedDecision as "approved" | "rejected";
   try {
     const result = await withAuthenticatedDb(async (tx) => {
       const roles = await tx`select role from public.user_roles where user_id=public.app_current_user_id() and role in ('admin','super_admin')`;
