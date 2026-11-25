@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 type Verification = { id:string; verification_type:string; status:string; submitted_at:string; store_name:string; store_slug:string; store_status:string; owner_name:string; owner_email:string; review_note:string|null };
 
@@ -9,13 +9,13 @@ export function SellerVerificationQueue() {
   const [notes,setNotes]=useState<Record<string,string>>({});
   const [message,setMessage]=useState("");
   const [busy,setBusy]=useState("");
-  async function refresh() {
+  const refresh = useCallback(async () => {
     const response=await fetch("/api/admin/seller-verifications");
     const data=await response.json() as {verifications?:Verification[];error?:string};
     if(!response.ok) throw new Error(data.error??"Gagal memuat data.");
     setItems(data.verifications??[]);
-  }
-  useEffect(()=>{ void refresh().catch((e)=>setMessage(e.message)); },[]);
+  }, []);
+  useEffect(()=>{ void refresh().catch((e)=>setMessage(e.message)); },[refresh]);
   async function decide(id:string,decision:"approved"|"rejected") {
     setBusy(id);setMessage("");
     try {
