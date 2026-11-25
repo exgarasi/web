@@ -23,7 +23,10 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const savedLocale = window.localStorage.getItem("exgarasi-locale");
     const savedCurrency = window.localStorage.getItem("exgarasi-currency");
+    // Restore browser preferences after hydration to avoid server/client markup mismatches.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (savedLocale === "id" || savedLocale === "en") setLocaleState(savedLocale);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (savedCurrency === "IDR" || savedCurrency === "USD") setCurrencyState(savedCurrency);
 
     const controller = new AbortController();
