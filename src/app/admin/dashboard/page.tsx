@@ -25,7 +25,7 @@ const navigation = [
   { label: "Penjualan", icon: ShoppingBag, soon: true },
   { label: "Pesanan", icon: ClipboardList, soon: true },
   { label: "Pelanggan", icon: Users, soon: true },
-  { label: "Partner seller", icon: Store, soon: true },
+  { label: "Partner seller", href: "/admin/seller-verifications", icon: Store },
 ];
 
 function MetricCard({
