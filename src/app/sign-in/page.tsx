@@ -20,10 +20,15 @@ export default function SignInPage() {
     event.preventDefault();
     setBusy(true);
     setError("");
-    const result = await signIn.email({ email, password, callbackURL: "/account/dashboard" });
-    if (result.error) setError(result.error.message ?? (id ? "Gagal masuk. Periksa kembali data Anda." : "Unable to sign in. Please check your details."));
-    else router.push("/account/dashboard");
-    setBusy(false);
+    try {
+      const result = await signIn.email({ email, password, callbackURL: "/account/dashboard" });
+      if (result.error) setError(result.error.message ?? (id ? "Gagal masuk. Periksa kembali data Anda." : "Unable to sign in. Please check your details."));
+      else router.push("/account/dashboard");
+    } catch {
+      setError(id ? "Terjadi gangguan. Silakan coba lagi." : "Something went wrong. Please try again.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -44,7 +49,10 @@ export default function SignInPage() {
           <p className="mt-3 text-[13px] leading-6 text-[#7b8794]">{id ? "Masuk ke akun EXGARASI Anda untuk melanjutkan." : "Sign in to your EXGARASI account to continue."}</p>
           <form onSubmit={submit} className="mt-9 space-y-5">
             <label className="block text-[11px] font-bold text-[#333b48]">{id ? "Alamat email" : "Email address"}<input type="email" required autoComplete="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="nama@email.com" className="mt-2.5 h-12 w-full rounded-xl border border-[#dfe5eb] bg-[#fbfcfd] px-4 text-[13px] font-normal outline-none transition placeholder:text-[#a5aeba] focus:border-[#0099ff] focus:bg-white focus:ring-4 focus:ring-[#0099ff]/10"/></label>
-            <label className="block text-[11px] font-bold text-[#333b48]">{id ? "Kata sandi" : "Password"}<input type="password" required autoComplete="current-password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••••••" className="mt-2.5 h-12 w-full rounded-xl border border-[#dfe5eb] bg-[#fbfcfd] px-4 text-[13px] font-normal outline-none transition placeholder:text-[#a5aeba] focus:border-[#0099ff] focus:bg-white focus:ring-4 focus:ring-[#0099ff]/10"/></label>
+            <div>
+              <label className="block text-[11px] font-bold text-[#333b48]">{id ? "Kata sandi" : "Password"}<input type="password" required autoComplete="current-password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••••••" className="mt-2.5 h-12 w-full rounded-xl border border-[#dfe5eb] bg-[#fbfcfd] px-4 text-[13px] font-normal outline-none transition placeholder:text-[#a5aeba] focus:border-[#0099ff] focus:bg-white focus:ring-4 focus:ring-[#0099ff]/10"/></label>
+              <div className="mt-2 text-right"><Link href="/forgot-password" className="text-[11px] font-semibold text-[#008fe8] hover:underline">{id ? "Lupa kata sandi?" : "Forgot password?"}</Link></div>
+            </div>
             {error && <p role="alert" className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-[12px] text-red-700">{error}</p>}
             <button disabled={busy} className="flex h-12 w-full items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[#111318] text-[12px] font-bold leading-none !text-white transition hover:bg-[#0099ff] disabled:cursor-not-allowed disabled:opacity-50">{busy ? (id ? "Sedang masuk..." : "Signing in...") : (id ? "Masuk ke akun" : "Sign in")}<ArrowRight size={15}/></button>
           </form>
