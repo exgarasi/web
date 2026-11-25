@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 type Verification = { id:string; verification_type:string; status:string; submitted_at:string; store_name:string; store_slug:string; store_status:string; owner_name:string; owner_email:string; review_note:string|null };
 
@@ -9,13 +9,24 @@ export function SellerVerificationQueue() {
   const [notes,setNotes]=useState<Record<string,string>>({});
   const [message,setMessage]=useState("");
   const [busy,setBusy]=useState("");
-  const refresh = useCallback(async () => {
+  async function refresh() {
     const response=await fetch("/api/admin/seller-verifications");
     const data=await response.json() as {verifications?:Verification[];error?:string};
     if(!response.ok) throw new Error(data.error??"Gagal memuat data.");
     setItems(data.verifications??[]);
+  }
+  useEffect(()=>{
+    let cancelled=false;
+    fetch("/api/admin/seller-verifications")
+      .then(async (response)=>{
+        const data=await response.json() as {verifications?:Verification[];error?:string};
+        if(!response.ok) throw new Error(data.error??"Gagal memuat data.");
+        return data;
+      })
+      .then((data)=>{if(!cancelled)setItems(data.verifications??[]);})
+      .catch((error:unknown)=>{if(!cancelled)setMessage(error instanceof Error?error.message:"Gagal memuat data.");});
+    return ()=>{cancelled=true;};
   }, []);
-  useEffect(()=>{ void refresh().catch((e)=>setMessage(e.message)); },[refresh]);
   async function decide(id:string,decision:"approved"|"rejected") {
     setBusy(id);setMessage("");
     try {
