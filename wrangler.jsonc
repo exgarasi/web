@@ -3,7 +3,9 @@
   "name": "exgarasi",
   "main": ".open-next/worker.js",
   "compatibility_date": "2026-11-18",
-  "compatibility_flags": ["nodejs_compat"],
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
   "upload_source_maps": true,
   "assets": {
     "directory": ".open-next/assets",
@@ -18,5 +20,8 @@
   ],
   "observability": {
     "enabled": true
+  },
+  "vars": {
+    "EMAIL_FROM": "EXGARASI <noreply@exgarasi.id>"
   }
 }
