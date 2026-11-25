@@ -20,7 +20,10 @@ export default function ResetPasswordPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const value = params.get("token");
+    // URL query parameters are only available in the browser; initialize this page from the reset link.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setToken(value ?? "");
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setInvalid(!value || params.get("error") === "INVALID_TOKEN");
   }, []);
 
