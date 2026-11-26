@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { ArrowLeft, PackagePlus } from "lucide-react";
 import { getCurrentUser } from "@/lib/current-user";
 import { withAuthenticatedDb } from "@/lib/db-context";
+import { AccountHeader } from "@/components/account-header";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -29,7 +30,7 @@ export default async function AdminCatalogPage() {
   });
 
   return (
-    <main className="min-h-screen bg-[#f7f9fc] text-gray-950">
+    <main className="min-h-screen bg-[#f7f9fc] text-gray-950">\n      <AccountHeader name={user.full_name || "Administrator"} email={user.email} roles={roles} active="admin" />
       <header className="border-b border-gray-200 bg-white">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4">
           <Link href="/admin/dashboard" className="flex items-center gap-2 text-sm font-semibold text-gray-600 hover:text-sky-600"><ArrowLeft size={16}/> Dashboard</Link>
