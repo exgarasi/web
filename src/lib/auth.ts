@@ -11,12 +11,21 @@ type EmailMessage = {
 };
 
 class ResendDeliveryError extends Error {
+  readonly code: string | null;
+
   constructor(
     readonly status: number,
     readonly response: string,
   ) {
     super(`Resend rejected the email (HTTP ${status}): ${response.slice(0, 500)}`);
     this.name = "ResendDeliveryError";
+
+    try {
+      const payload = JSON.parse(response) as { name?: unknown };
+      this.code = typeof payload.name === "string" ? payload.name : null;
+    } catch {
+      this.code = null;
+    }
   }
 }
 
@@ -107,10 +116,18 @@ async function sendWithBrevo(message: EmailMessage, from: string) {
 function shouldUseBrevoFallback(error: unknown) {
   if (!(error instanceof ResendDeliveryError)) return false;
 
-  // Resend 429 covers rate limits. The response text check also catches
-  // daily/monthly sending-quota errors returned with other HTTP statuses.
+  // Resend uses HTTP 429 for request-rate limits and exhausted daily/monthly
+  // email quotas. Prefer its structured error name, with a message fallback
+  // for responses that do not include a machine-readable name.
+  const fallbackCodes = new Set([
+    "rate_limit_exceeded",
+    "daily_quota_exceeded",
+    "monthly_quota_exceeded",
+  ]);
+
   return (
     error.status === 429 ||
+    (error.code !== null && fallbackCodes.has(error.code)) ||
     /quota|daily.{0,30}limit|monthly.{0,30}limit|sending limit|limit exceeded/i.test(
       error.response,
     )
