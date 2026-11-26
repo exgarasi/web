@@ -177,18 +177,22 @@ export async function getAuth() {
   const database = await getDatabase();
   const { env } = getCloudflareContext();
   const runtimeEnv = env as unknown as Record<string, string | undefined>;
+  // Cloudflare bindings are the source of truth; process.env is a compatibility fallback.
+  const googleClientId = runtimeEnv.GOOGLE_CLIENT_ID ?? process.env.GOOGLE_CLIENT_ID;
+  const googleClientSecret = runtimeEnv.GOOGLE_CLIENT_SECRET ?? process.env.GOOGLE_CLIENT_SECRET;
+  console.info("[auth] Google OAuth credentials available:", Boolean(googleClientId && googleClientSecret));
   const production = process.env.NODE_ENV === "production";
   const auth = betterAuth({
     appName: "EXGARASI",
     secret,
     baseURL: process.env.APP_BASE_URL ?? process.env.NEXT_PUBLIC_APP_URL,
     database: drizzleAdapter(database.db, { provider: "pg", schema: authSchemaTables }),
-    ...(runtimeEnv.GOOGLE_CLIENT_ID && runtimeEnv.GOOGLE_CLIENT_SECRET
+    ...(googleClientId && googleClientSecret
       ? {
           socialProviders: {
             google: {
-              clientId: runtimeEnv.GOOGLE_CLIENT_ID,
-              clientSecret: runtimeEnv.GOOGLE_CLIENT_SECRET,
+              clientId: googleClientId,
+              clientSecret: googleClientSecret,
               prompt: "select_account",
             },
           },
