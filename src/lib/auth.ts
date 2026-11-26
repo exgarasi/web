@@ -25,7 +25,7 @@ function parseEmailFrom(value: string) {
   const name = match?.[1]?.replace(/^["']|["']$/g, "").trim() || "EXGARASI";
   const email = (match?.[2] ?? value).trim();
 
-  if (!/^[^\s@]+@[^\s@]+\\.[^\s@]+$/.test(email)) {
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     throw new Error("EMAIL_FROM must contain a valid sender email address.");
   }
 
