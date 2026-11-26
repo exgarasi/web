@@ -7,7 +7,7 @@ type Verification = { id: string; store_id: string; store_name: string; verifica
 
 export function SellerVerificationForm({ stores }: { stores: Store[] }) {
   const [items,setItems] = useState<Verification[]>([]);
-  const [storeId,setStoreId] = useState(stores.find((s)=>s.status!=="active")?.id ?? "");
+  const [storeId,setStoreId] = useState(stores.find((s)=>s.status==="invited"||s.status==="pending_review")?.id ?? "");
   const [kind,setKind] = useState("individual");
   const [busy,setBusy] = useState(false);
   const [message,setMessage] = useState("");
@@ -43,7 +43,7 @@ export function SellerVerificationForm({ stores }: { stores: Store[] }) {
     finally { setBusy(false); }
   }
 
-  const eligible = stores.filter((s)=>s.status!=="active");
+  const eligible = stores.filter((s)=>s.status==="invited"||s.status==="pending_review");
   return <section className="mt-8 rounded-2xl border border-gray-200 bg-white p-6">
     <div><p className="text-xs font-bold uppercase tracking-[.18em] text-sky-600">Seller onboarding</p><h2 className="mt-2 text-xl font-bold">Verifikasi toko</h2><p className="mt-1 text-sm text-gray-500">Ajukan pemeriksaan toko agar dapat diaktifkan oleh tim EXGARASI.</p></div>
     {eligible.length>0 && <form onSubmit={submit} className="mt-5 grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
