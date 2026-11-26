@@ -36,11 +36,20 @@ export default function SignUpPage() {
     setBusy(true);
     setError("");
     setMessage("");
-    const result = await signUp.email({ name, email, password, callbackURL: "/account/dashboard" });
-    if (result.error) setError(result.error.message ?? (id ? "Gagal membuat akun." : "Unable to create account."));
-    else if (process.env.NODE_ENV === "production") setMessage(id ? "Akun berhasil dibuat. Periksa email Anda untuk melakukan verifikasi sebelum masuk." : "Account created. Check your email and verify your address before signing in.");
-    else router.push("/account/dashboard");
-    setBusy(false);
+    try {
+      const result = await signUp.email({ name, email, password, callbackURL: "/account/dashboard" });
+      if (result.error) {
+        setError(result.error.message ?? (id ? "Gagal membuat akun." : "Unable to create account."));
+      } else if (process.env.NODE_ENV === "production") {
+        setMessage(id ? "Akun berhasil dibuat. Periksa email Anda untuk melakukan verifikasi sebelum masuk." : "Account created. Check your email and verify your address before signing in.");
+      } else {
+        router.push("/account/dashboard");
+      }
+    } catch {
+      setError(id ? "Terjadi gangguan saat membuat akun. Silakan coba lagi." : "Something went wrong while creating your account. Please try again.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
