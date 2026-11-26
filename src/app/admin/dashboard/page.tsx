@@ -14,6 +14,7 @@ import {
 import { getCurrentUser } from "@/lib/current-user";
 import { withAuthenticatedDb } from "@/lib/db-context";
 import { SellerInviteForm } from "./invite-form";
+import { AccountHeader } from "@/components/account-header";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
