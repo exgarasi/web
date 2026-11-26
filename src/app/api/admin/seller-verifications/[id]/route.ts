@@ -35,6 +35,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
       : message === "UNAUTHENTICATED" ? 401
       : message === "VERIFICATION_NOT_PENDING" ? 409
       : message === "STORE_NOT_FOUND" ? 404
+      : ["INVALID_DECISION", "INVALID_REVIEW_NOTE"].includes(message) ? 400
       : 500;
     return NextResponse.json({ error: message }, { status });
   }
