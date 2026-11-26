@@ -24,7 +24,8 @@ export function AccountHeader({ name, email, roles = [], active = "account" }: A
     setBusy(true);
     setError("");
     try {
-      await signOut();
+      const result = await signOut();
+      if (result.error) throw new Error(result.error.message || "Logout failed");
       router.replace("/sign-in");
       router.refresh();
     } catch {
