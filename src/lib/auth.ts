@@ -65,19 +65,22 @@ async function sendEmail(message: EmailMessage) {
   const from = process.env.EMAIL_FROM;
   if (!from) throw new Error("EMAIL_FROM must be configured to send emails.");
 
+  // Brevo is the primary provider. Resend is only a fallback if Brevo fails.
   try {
-    await sendWithResend(message, from);
+    await sendWithBrevo(message, from);
+    console.info("[email] Email sent successfully via Brevo.");
     return;
-  } catch (resendError) {
-    console.error("[email] Resend failed; trying Brevo fallback.", resendError);
+  } catch (brevoError) {
+    console.error("[email] Brevo primary delivery failed; trying Resend fallback.", brevoError);
   }
 
   try {
-    await sendWithBrevo(message, from);
+    await sendWithResend(message, from);
+    console.warn("[email] Email delivered via Resend fallback.");
     return;
-  } catch (brevoError) {
-    console.error("[email] Brevo fallback also failed.", brevoError);
-    throw new Error("Email delivery failed with both Resend and Brevo.");
+  } catch (resendError) {
+    console.error("[email] Resend fallback also failed.", resendError);
+    throw new Error("Email delivery failed with both Brevo and Resend.");
   }
 }
 
