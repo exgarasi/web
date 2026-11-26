@@ -1,5 +1,4 @@
 import { betterAuth } from "better-auth";
-import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { getDatabase } from "@/db";
 import { authSchemaTables } from "@/db/auth-schema";
@@ -175,11 +174,10 @@ export async function getAuth() {
   }
 
   const database = await getDatabase();
-  const { env } = getCloudflareContext();
-  const runtimeEnv = env as unknown as Record<string, string | undefined>;
-  // Cloudflare bindings are the source of truth; process.env is a compatibility fallback.
-  const googleClientId = runtimeEnv.GOOGLE_CLIENT_ID ?? process.env.GOOGLE_CLIENT_ID;
-  const googleClientSecret = runtimeEnv.GOOGLE_CLIENT_SECRET ?? process.env.GOOGLE_CLIENT_SECRET;
+  // Cloudflare Workers exposes configured vars/secrets through process.env when
+  // nodejs_compat is enabled and nodejs_compat_populate_process_env is active.
+  const googleClientId = process.env.GOOGLE_CLIENT_ID;
+  const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
   console.info("[auth] Google OAuth credentials available:", Boolean(googleClientId && googleClientSecret));
   const production = process.env.NODE_ENV === "production";
   const auth = betterAuth({
