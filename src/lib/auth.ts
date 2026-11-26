@@ -175,8 +175,7 @@ async function sendPasswordResetEmail(to: string, url: string) {
 }
 
 export async function getAuth() {
-  // Cloudflare Worker bindings are authoritative in deployed environments.
-  // process.env is only a fallback for local Node.js development.
+  // Read Cloudflare runtime configuration from the Worker environment.
   const { env } = getCloudflareContext();
   const runtimeEnv = env as unknown as Record<string, string | undefined>;
   // Cloudflare Workers with nodejs_compat_populate_process_env expose
