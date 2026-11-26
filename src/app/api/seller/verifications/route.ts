@@ -21,10 +21,11 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const body = await request.json().catch(() => null) as { storeId?: string; verificationType?: string } | null;
-  const storeId = body?.storeId?.trim();
-  const requestedVerificationType = body?.verificationType?.trim();
-  if (!storeId || !/^[0-9a-f-]{36}$/i.test(storeId) || !["individual","business"].includes(requestedVerificationType ?? "")) {
+  const body = await request.json().catch(() => null) as { storeId?: unknown; verificationType?: unknown } | null;
+  const storeId = typeof body?.storeId === "string" ? body.storeId.trim() : "";
+  const requestedVerificationType = typeof body?.verificationType === "string" ? body.verificationType.trim() : "";
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(storeId)
+    || !["individual", "business"].includes(requestedVerificationType)) {
     return NextResponse.json({ error: "Pilih toko dan jenis verifikasi yang valid." }, { status: 400 });
   }
   const verificationType = requestedVerificationType as "individual" | "business";
@@ -38,7 +39,9 @@ export async function POST(request: Request) {
         limit 1
       `;
       if (!stores.length) throw new Error("STORE_NOT_FOUND");
-      if (stores[0].status === "active") throw new Error("STORE_ALREADY_APPROVED");
+      if (!["invited", "pending_review"].includes(String(stores[0].status))) {
+        throw new Error(stores[0].status === "active" ? "STORE_ALREADY_APPROVED" : "STORE_NOT_ELIGIBLE");
+      }
       const pending = await tx`
         select id from public.seller_verifications
         where store_id=${storeId}::uuid and status='pending'
@@ -54,8 +57,12 @@ export async function POST(request: Request) {
     });
     return NextResponse.json({ verification: result }, { status: 201 });
   } catch (error) {
+    const code = (error as { code?: string })?.code;
     const message = error instanceof Error ? error.message : "Submission failed.";
-    const status = message === "UNAUTHENTICATED" ? 401 : message === "STORE_NOT_FOUND" ? 404 : message === "VERIFICATION_PENDING" || message === "STORE_ALREADY_APPROVED" ? 409 : 400;
+    const status = message === "UNAUTHENTICATED" ? 401
+      : message === "STORE_NOT_FOUND" ? 404
+      : ["VERIFICATION_PENDING", "STORE_ALREADY_APPROVED", "STORE_NOT_ELIGIBLE"].includes(message) || code === "23505" ? 409
+      : 500;
     return NextResponse.json({ error: message }, { status });
   }
 }
