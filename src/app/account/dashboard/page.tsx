@@ -15,7 +15,7 @@ export default async function BuyerDashboard() {
   `);
   return (
     <main className="min-h-screen bg-[#f7f9fc] text-[#111827]">
-      <AccountHeader name={user.full_name} email={user.email} roles={user.roles as string[]} active="account" />
+      <AccountHeader name={user.full_name || "EXGARASI member"} email={user.email} roles={user.roles as string[]} active="account" />
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
         <div className="rounded-3xl border border-[#e5eaf0] bg-white p-6 shadow-sm sm:p-8">
           <p className="text-[10px] font-bold tracking-[.24em] text-[#008fe8]">MY EXGARASI</p>
