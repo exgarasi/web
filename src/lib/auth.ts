@@ -11,11 +11,16 @@ type EmailMessage = {
 };
 
 function parseEmailFrom(value: string) {
-  const match = value.match(/^\\s*(.*?)\\s*<([^<>]+)>\\s*$/);
-  if (match) {
-    return { name: match[1].replace(/^["']|["']$/g, "").trim(), email: match[2].trim() };
+  // Accept both "EXGARASI <noreply@exgarasi.id>" and a plain email address.
+  const match = value.trim().match(/^\s*(.*?)\s*<([^<>]+)>\s*$/);
+  const name = match?.[1]?.replace(/^["']|["']$/g, "").trim() || "EXGARASI";
+  const email = (match?.[2] ?? value).trim();
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    throw new Error("EMAIL_FROM must contain a valid sender email address.");
   }
-  return { name: "EXGARASI", email: value.trim() };
+
+  return { name, email };
 }
 
 async function sendWithBrevo(message: EmailMessage, from: string) {
@@ -60,7 +65,7 @@ async function sendEmail(message: EmailMessage) {
   const from = process.env.EMAIL_FROM;
   if (!from) throw new Error("EMAIL_FROM must be configured to send emails.");
 
-  // Brevo-only mode: do not silently fall back to Resend during provider testing.
+  // Brevo-only mode: do not silently fall back to Resend.
   await sendWithBrevo(message, from);
 }
 
@@ -77,7 +82,7 @@ async function sendPasswordResetEmail(to: string, url: string) {
     to,
     subject: "Reset your EXGARASI password",
     html: `<div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;color:#111318;line-height:1.6"><p style="font-size:12px;font-weight:700;letter-spacing:3px;color:#0099ff">EXGARASI</p><h1 style="font-size:24px">Reset your password</h1><p>We received a request to reset the password for your EXGARASI account.</p><p style="margin:28px 0"><a href="${url}" style="display:inline-block;background:#111318;color:#fff;text-decoration:none;padding:13px 22px;border-radius:8px">Reset password</a></p><p>This link expires in 1 hour. If you did not request a password reset, you can safely ignore this email.</p><p style="font-size:12px;color:#7b8794">EXGARASI · The automotive marketplace for enthusiasts.</p></div>`,
-    text: `We received a request to reset your EXGARASI password. Open this link to choose a new password: ${url}\\n\\nThis link expires in 1 hour. If you did not request this, you can ignore this email.`,
+    text: `We received a request to reset your EXGARASI password. Open this link to choose a new password: ${url}\n\nThis link expires in 1 hour. If you did not request this, you can ignore this email.`,
   });
 }
 
