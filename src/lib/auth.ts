@@ -1,4 +1,5 @@
 import { betterAuth } from "better-auth";
+import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { getDatabase } from "@/db";
 import { authSchemaTables } from "@/db/auth-schema";
@@ -168,18 +169,42 @@ async function sendPasswordResetEmail(to: string, url: string) {
 }
 
 export async function getAuth() {
-  const secret = process.env.AUTH_SECRET;
+  const { env } = getCloudflareContext();
+  const runtimeEnv = env as unknown as Record<string, string | undefined>;
+  const readEnv = (key: string) =>
+    process.env[key]?.trim() || runtimeEnv[key]?.trim() || "";
+  const secret = readEnv("AUTH_SECRET");
   if (!secret || secret.length < 32) {
     throw new Error("AUTH_SECRET must be configured with at least 32 characters.");
   }
+
+  const googleClientId = readEnv("GOOGLE_CLIENT_ID");
+  const googleClientSecret = readEnv("GOOGLE_CLIENT_SECRET");
+  const googleCredentialsAvailable = Boolean(googleClientId && googleClientSecret);
+  console.info("[auth] Google OAuth credentials available:", googleCredentialsAvailable);
 
   const database = await getDatabase();
   const production = process.env.NODE_ENV === "production";
   const auth = betterAuth({
     appName: "EXGARASI",
     secret,
-    baseURL: process.env.APP_BASE_URL ?? process.env.NEXT_PUBLIC_APP_URL,
+    baseURL: {
+      allowedHosts: ["exgarasi.id", "www.exgarasi.id"],
+      protocol: "auto",
+      fallback: "https://exgarasi.id",
+    },
     database: drizzleAdapter(database.db, { provider: "pg", schema: authSchemaTables }),
+    ...(googleCredentialsAvailable
+      ? {
+          socialProviders: {
+            google: {
+              clientId: googleClientId,
+              clientSecret: googleClientSecret,
+              prompt: "select_account" as const,
+            },
+          },
+        }
+      : {}),
     emailAndPassword: {
       enabled: true,
       requireEmailVerification: production,
