@@ -189,7 +189,12 @@ export async function getAuth() {
     appName: "EXGARASI",
     secret,
     baseURL: {
-      allowedHosts: ["exgarasi.id", "www.exgarasi.id"],
+      allowedHosts: [
+        "exgarasi.id",
+        "www.exgarasi.id",
+        "fix-google-oauth-prod-isolated-exgarasi.exgarasi-id.workers.dev",
+        "feat-seller-verification-exgarasi.exgarasi-id.workers.dev",
+      ],
       protocol: "auto",
       fallback: "https://exgarasi.id",
     },
