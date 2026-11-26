@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, ShieldCheck } from "lucide-react";
+import { ArrowLeft, ArrowRight, Chrome, ShieldCheck } from "lucide-react";
 import { CurrencySwitcher, LanguageSwitcher, useLocale } from "@/components/locale-provider";
 import { signIn } from "@/lib/auth-client";
 
@@ -15,6 +15,19 @@ export default function SignInPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+
+  async function signInWithGoogle() {
+    setBusy(true);
+    setError("");
+    try {
+      const result = await signIn.social({ provider: "google", callbackURL: "/account/dashboard" });
+      if (result.error) setError(result.error.message ?? (id ? "Gagal masuk dengan Google." : "Unable to sign in with Google."));
+    } catch {
+      setError(id ? "Gagal memulai login Google. Silakan coba lagi." : "Could not start Google sign-in. Please try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -47,7 +60,9 @@ export default function SignInPage() {
           <p className="mt-8 text-[10px] font-bold tracking-[.25em] text-[#0099ff]">WELCOME BACK</p>
           <h1 className="mt-3 text-4xl font-semibold tracking-[-.05em] text-[#111318]">{id ? "Selamat datang." : "Welcome back."}</h1>
           <p className="mt-3 text-[13px] leading-6 text-[#7b8794]">{id ? "Masuk ke akun EXGARASI Anda untuk melanjutkan." : "Sign in to your EXGARASI account to continue."}</p>
-          <form onSubmit={submit} className="mt-9 space-y-5">
+          <button type="button" onClick={signInWithGoogle} disabled={busy} className="mt-8 flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-[#dfe5eb] bg-white text-[12px] font-bold text-[#27313d] transition hover:border-[#0099ff] hover:bg-[#f8fcff] disabled:cursor-not-allowed disabled:opacity-50"><Chrome size={17}/> {id ? "Lanjutkan dengan Google" : "Continue with Google"}</button>
+          <div className="my-5 flex items-center gap-3 text-[10px] font-semibold uppercase tracking-wider text-[#a0a9b5]"><span className="h-px flex-1 bg-[#e8edf2]"/>{id ? "atau dengan email" : "or with email"}<span className="h-px flex-1 bg-[#e8edf2]"/></div>
+          <form onSubmit={submit} className="space-y-5">
             <label className="block text-[11px] font-bold text-[#333b48]">{id ? "Alamat email" : "Email address"}<input type="email" required autoComplete="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="nama@email.com" className="mt-2.5 h-12 w-full rounded-xl border border-[#dfe5eb] bg-[#fbfcfd] px-4 text-[13px] font-normal outline-none transition placeholder:text-[#a5aeba] focus:border-[#0099ff] focus:bg-white focus:ring-4 focus:ring-[#0099ff]/10"/></label>
             <div>
               <label className="block text-[11px] font-bold text-[#333b48]">{id ? "Kata sandi" : "Password"}<input type="password" required autoComplete="current-password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••••••" className="mt-2.5 h-12 w-full rounded-xl border border-[#dfe5eb] bg-[#fbfcfd] px-4 text-[13px] font-normal outline-none transition placeholder:text-[#a5aeba] focus:border-[#0099ff] focus:bg-white focus:ring-4 focus:ring-[#0099ff]/10"/></label>
