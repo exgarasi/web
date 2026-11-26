@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/current-user";
 import { withAuthenticatedDb } from "@/lib/db-context";
+import { SellerVerificationForm } from "./verification-form";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,5 +23,6 @@ export default async function SellerDashboard() {
       <div className="flex items-start justify-between gap-3"><div><h2 className="text-xl font-bold">{store.name}</h2><p className="mt-1 text-sm text-gray-500">/{store.slug}</p></div><span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700">{store.status}</span></div>
       <div className="mt-6 flex gap-8"><div><p className="text-xs text-gray-500">Listings</p><p className="text-2xl font-black">{store.listing_count}</p></div><div><p className="text-xs text-gray-500">Orders</p><p className="text-2xl font-black">{store.order_count}</p></div></div>
     </section>)}{stores.length===0&&<section className="rounded-2xl border bg-white p-8"><h2 className="font-bold">No partner store yet</h2><p className="mt-2 text-sm text-gray-500">Seller access is invitation-only. Ask EXGARASI admin for an invitation.</p></section>}</div>
+    {stores.length>0&&<SellerVerificationForm stores={stores.map((store)=>({id:String(store.id),name:String(store.name),status:String(store.status)}))}/>}
   </div></main>;
 }

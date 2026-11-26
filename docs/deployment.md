@@ -16,7 +16,7 @@ Create two projects in the Supabase dashboard:
 
 Save each project's database password in a password manager. Never commit it to GitHub or paste it into source files.
 
-For the initial migration, use the project's direct PostgreSQL connection if IPv6/network access permits, or the Supabase session pooler connection. Use a direct/session connection for DDL migrations; use the transaction pooler only for application runtime after verifying prepared statements and transaction behavior. This app uses postgres.js with `prepare: false`.
+For the initial migration, use the project's direct PostgreSQL connection if IPv6/network access permits, or the Supabase session pooler connection. Use a direct/session connection for DDL migrations; use the transaction pooler only for application runtime after verifying prepared statements and transaction behavior. This app uses postgres.js with `prepare: true`.
 
 ## 2. PostgreSQL roles and credential setup
 
@@ -67,6 +67,8 @@ Set secrets from a trusted terminal. Generate `AUTH_SECRET` as a random value of
 ```bash
 npx wrangler secret put AUTH_SECRET
 npx wrangler secret put RESEND_API_KEY
+# Optional fallback provider; configure only after verifying the Brevo sender/domain.
+npx wrangler secret put BREVO_API_KEY
 npx wrangler secret put EMAIL_FROM
 npx wrangler secret put APP_BASE_URL
 npx wrangler secret put NEXT_PUBLIC_APP_URL
@@ -82,11 +84,40 @@ In Supabase Dashboard → Project Settings → Database, copy the connection str
 - Runtime PostgreSQL: Cloudflare `HYPERDRIVE` binding; raw database URI stays inside Hyperdrive configuration.
 - `APP_BASE_URL` and `NEXT_PUBLIC_APP_URL`: application origin.
 - `AUTH_SECRET`: random secret with at least 32 characters.
-- `RESEND_API_KEY` and `EMAIL_FROM`: verified sender configuration for production verification emails.
+- `RESEND_API_KEY` and `EMAIL_FROM`: verified sender configuration for production verification emails. Resend is primary; `BREVO_API_KEY` is optional and is used only when Resend returns a quota/rate-limit error.
 
 Set secrets with `wrangler secret put`. Do not place real secrets in GitHub or `.env.example`.
 
-## 5. Applied migrations 0001–0013
+## 5. Applied migrations and seller-verification rollout
+
+Migrations 0001–0015 are recorded as applied in EXGARASI-dev through the Supabase managed migration control plane. Migrations 0014 and 0015 were applied successfully to EXGARASI-dev only; production has not been migrated. The post-migration privilege checks confirmed that `exgarasi_app` cannot directly update seller-verification status, review notes, or store status, and can execute `public.app_review_seller_verification(uuid,text,text)`. The `anon` and `authenticated` roles cannot execute that function. Supabase Security Advisor returned no findings at the time of verification. These checks validate database privileges, not the complete browser workflow. Do not apply these migrations to production until the development application tests pass.
+
+Before applying migration 0014 to any other database, check for duplicate pending requests:
+
+```sql
+SELECT store_id, count(*) AS pending_count
+FROM public.seller_verifications
+WHERE status = 'pending'
+GROUP BY store_id
+HAVING count(*) > 1;
+```
+
+The query must return no rows before creating the partial unique index. Review and resolve any duplicates deliberately; do not delete verification records automatically.
+
+To re-check the migration 0015 privileges in EXGARASI-dev, run:
+
+```sql
+SELECT has_column_privilege('exgarasi_app', 'public.seller_verifications', 'status', 'UPDATE') AS can_update_verification_status,
+       has_column_privilege('exgarasi_app', 'public.seller_verifications', 'review_note', 'UPDATE') AS can_update_review_note,
+       has_column_privilege('exgarasi_app', 'public.seller_verifications', 'reviewer_user_id', 'UPDATE') AS can_update_reviewer,
+       has_column_privilege('exgarasi_app', 'public.seller_verifications', 'reviewed_at', 'UPDATE') AS can_update_reviewed_at,
+       has_column_privilege('exgarasi_app', 'public.stores', 'status', 'UPDATE') AS can_update_store_status,
+       has_function_privilege('exgarasi_app', 'public.app_review_seller_verification(uuid,text,text)', 'EXECUTE') AS can_review_through_function,
+       has_function_privilege('anon', 'public.app_review_seller_verification(uuid,text,text)', 'EXECUTE') AS anon_can_review,
+       has_function_privilege('authenticated', 'public.app_review_seller_verification(uuid,text,text)', 'EXECUTE') AS authenticated_can_review;
+```
+
+Expected result: the five direct-update privileges are `false`; `can_review_through_function` is `true`; `anon_can_review` and `authenticated_can_review` are `false`.
 
 From the repository branch `feat/marketplace-foundation`, install dependencies with `npm ci`. Migrations 0001–0013 are already applied to EXGARASI-dev through the Supabase managed migration tool. Do not run `npm run db:migrate` with the runtime role: the dedicated migration login and ownership model are not enabled yet. The Supabase migration history records applied migrations. A matching `public.schema_migrations` ledger has been seeded to prevent the repository runner from replaying those files. Migrations 0001–0013 include the marketplace schema, Better Auth tables, application identity mapping, RLS, stock functions, least-privilege policies, Supabase API hardening, foreign-key indexes, private-schema RLS and migration-ledger isolation.
 
@@ -150,6 +181,11 @@ The RLS test creates two users, two stores and two addresses, then verifies:
 The script rolls back its fixtures. Follow it with manual signup, email verification, login, session persistence and seller invitation acceptance tests in the dev project.
 
 ## 9. Current routes
+
+- `/admin/seller-verifications`: admin/super-admin seller verification queue
+- `/api/seller/verifications`: seller verification status and submission API
+- `/api/admin/seller-verifications`: admin verification queue API
+- `/api/admin/seller-verifications/[id]`: admin approval/rejection API
 
 - `/sign-up`: buyer registration
 - `/sign-in`: sign in
