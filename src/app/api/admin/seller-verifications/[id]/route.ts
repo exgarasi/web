@@ -17,24 +17,15 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
   const decision = requestedDecision as "approved" | "rejected";
   try {
     const result = await withAuthenticatedDb(async (tx) => {
-      const roles = await tx`select role from public.user_roles where user_id=public.app_current_user_id() and role in ('admin','super_admin')`;
-      if (!roles.length) throw new Error("FORBIDDEN");
       const rows = await tx`
-        update public.seller_verifications
-        set status=${decision},review_note=nullif(${reviewNote},''),reviewer_user_id=public.app_current_user_id(),reviewed_at=now()
-        where id=${id}::uuid and status='pending'
-        returning store_id,status
+        select verification_id,store_id,decision
+        from public.app_review_seller_verification(
+          ${id}::uuid,
+          ${decision},
+          nullif(${reviewNote},'')
+        )
       `;
       if (!rows.length) throw new Error("VERIFICATION_NOT_PENDING");
-      if (decision === "approved") {
-        const stores = await tx`
-          update public.stores
-          set status='active',approved_at=now(),updated_at=now()
-          where id=${rows[0].store_id}::uuid
-          returning id
-        `;
-        if (!stores.length) throw new Error("STORE_NOT_FOUND");
-      }
       return rows[0];
     });
     return NextResponse.json({ verification: result });
