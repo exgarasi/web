@@ -11,32 +11,11 @@ type EmailMessage = {
 };
 
 function parseEmailFrom(value: string) {
-  const match = value.match(/^\s*(.*?)\s*<([^<>]+)>\s*$/);
+  const match = value.match(/^\\s*(.*?)\\s*<([^<>]+)>\\s*$/);
   if (match) {
     return { name: match[1].replace(/^["']|["']$/g, "").trim(), email: match[2].trim() };
   }
   return { name: "EXGARASI", email: value.trim() };
-}
-
-async function sendWithResend(message: EmailMessage, from: string) {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) throw new Error("RESEND_API_KEY is not configured.");
-
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      from,
-      to: [message.to],
-      subject: message.subject,
-      html: message.html,
-      ...(message.text ? { text: message.text } : {}),
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Resend rejected the email with status ${response.status}.`);
-  }
 }
 
 async function sendWithBrevo(message: EmailMessage, from: string) {
@@ -46,7 +25,11 @@ async function sendWithBrevo(message: EmailMessage, from: string) {
   const sender = parseEmailFrom(from);
   const response = await fetch("https://api.brevo.com/v3/smtp/email", {
     method: "POST",
-    headers: { "api-key": apiKey, "Content-Type": "application/json", accept: "application/json" },
+    headers: {
+      "api-key": apiKey,
+      "Content-Type": "application/json",
+      accept: "application/json",
+    },
     body: JSON.stringify({
       sender,
       to: [{ email: message.to }],
@@ -57,31 +40,28 @@ async function sendWithBrevo(message: EmailMessage, from: string) {
   });
 
   if (!response.ok) {
-    throw new Error(`Brevo rejected the email with status ${response.status}.`);
+    const errorBody = await response.text();
+    console.error("[email] Brevo delivery failed.", {
+      status: response.status,
+      response: errorBody.slice(0, 2000),
+    });
+    throw new Error(
+      `Brevo rejected the email (HTTP ${response.status}): ${errorBody.slice(0, 500)}`,
+    );
   }
+
+  const result = (await response.json()) as { messageId?: string };
+  console.info("[email] Email accepted by Brevo.", {
+    messageId: result.messageId ?? "not-provided",
+  });
 }
 
 async function sendEmail(message: EmailMessage) {
   const from = process.env.EMAIL_FROM;
   if (!from) throw new Error("EMAIL_FROM must be configured to send emails.");
 
-  // Brevo is the primary provider. Resend is only a fallback if Brevo fails.
-  try {
-    await sendWithBrevo(message, from);
-    console.info("[email] Email sent successfully via Brevo.");
-    return;
-  } catch (brevoError) {
-    console.error("[email] Brevo primary delivery failed; trying Resend fallback.", brevoError);
-  }
-
-  try {
-    await sendWithResend(message, from);
-    console.warn("[email] Email delivered via Resend fallback.");
-    return;
-  } catch (resendError) {
-    console.error("[email] Resend fallback also failed.", resendError);
-    throw new Error("Email delivery failed with both Brevo and Resend.");
-  }
+  // Brevo-only mode: do not silently fall back to Resend during provider testing.
+  await sendWithBrevo(message, from);
 }
 
 async function sendVerificationEmail(to: string, url: string) {
@@ -97,7 +77,7 @@ async function sendPasswordResetEmail(to: string, url: string) {
     to,
     subject: "Reset your EXGARASI password",
     html: `<div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;color:#111318;line-height:1.6"><p style="font-size:12px;font-weight:700;letter-spacing:3px;color:#0099ff">EXGARASI</p><h1 style="font-size:24px">Reset your password</h1><p>We received a request to reset the password for your EXGARASI account.</p><p style="margin:28px 0"><a href="${url}" style="display:inline-block;background:#111318;color:#fff;text-decoration:none;padding:13px 22px;border-radius:8px">Reset password</a></p><p>This link expires in 1 hour. If you did not request a password reset, you can safely ignore this email.</p><p style="font-size:12px;color:#7b8794">EXGARASI · The automotive marketplace for enthusiasts.</p></div>`,
-    text: `We received a request to reset your EXGARASI password. Open this link to choose a new password: ${url}\n\nThis link expires in 1 hour. If you did not request this, you can ignore this email.`,
+    text: `We received a request to reset your EXGARASI password. Open this link to choose a new password: ${url}\\n\\nThis link expires in 1 hour. If you did not request this, you can ignore this email.`,
   });
 }
 
