@@ -21,11 +21,11 @@ class ResendDeliveryError extends Error {
 }
 
 function parseEmailFrom(value: string) {
-  const match = value.trim().match(/^\\s*(.*?)\\s*<([^<>]+)>\\s*$/);
+  const match = value.trim().match(/^\s*(.*?)\s*<([^<>]+)>\s*$/);
   const name = match?.[1]?.replace(/^["']|["']$/g, "").trim() || "EXGARASI";
   const email = (match?.[2] ?? value).trim();
 
-  if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {
+  if (!/^[^\s@]+@[^\s@]+\\.[^\s@]+$/.test(email)) {
     throw new Error("EMAIL_FROM must contain a valid sender email address.");
   }
 
