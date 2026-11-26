@@ -16,7 +16,7 @@ Create two projects in the Supabase dashboard:
 
 Save each project's database password in a password manager. Never commit it to GitHub or paste it into source files.
 
-For the initial migration, use the project's direct PostgreSQL connection if IPv6/network access permits, or the Supabase session pooler connection. Use a direct/session connection for DDL migrations; use the transaction pooler only for application runtime after verifying prepared statements and transaction behavior. This app uses postgres.js with `prepare: false`.
+For the initial migration, use the project's direct PostgreSQL connection if IPv6/network access permits, or the Supabase session pooler connection. Use a direct/session connection for DDL migrations; use the transaction pooler only for application runtime after verifying prepared statements and transaction behavior. This app uses postgres.js with `prepare: true`.
 
 ## 2. PostgreSQL roles and credential setup
 
@@ -88,9 +88,31 @@ In Supabase Dashboard → Project Settings → Database, copy the connection str
 
 Set secrets with `wrangler secret put`. Do not place real secrets in GitHub or `.env.example`.
 
-## 5. Applied migrations 0001–0013
+## 5. Applied migrations and seller-verification rollout
 
-Migration `0014` adds seller-verification indexes and initial runtime grants. Migration `0015` moves admin approval/rejection into a `SECURITY DEFINER` database function and revokes direct runtime updates to verification/store activation fields. Apply `0015` through the Supabase managed migration control plane in EXGARASI-dev, verify the function and grants, then record it in the migration history and `public.schema_migrations`. Do not apply it to production until the development validation passes.
+Migrations 0001–0013 and 0014 are recorded as applied in EXGARASI-dev. Migration 0015 is a new security hardening migration and has not yet been applied. Apply it through the Supabase managed migration control plane in EXGARASI-dev, verify the function and grants, then record it in the migration history and `public.schema_migrations`. Do not apply it to production until the development validation passes.
+
+Before applying migration 0014 to any other database, check for duplicate pending requests:
+
+```sql
+SELECT store_id, count(*) AS pending_count
+FROM public.seller_verifications
+WHERE status = 'pending'
+GROUP BY store_id
+HAVING count(*) > 1;
+```
+
+The query must return no rows before creating the partial unique index. Review and resolve any duplicates deliberately; do not delete verification records automatically.
+
+After applying migration 0015, verify that the runtime role cannot directly update the protected columns and can execute only the guarded review function:
+
+```sql
+SELECT has_column_privilege('exgarasi_app', 'public.seller_verifications', 'status', 'UPDATE') AS can_update_verification_status,
+       has_column_privilege('exgarasi_app', 'public.stores', 'status', 'UPDATE') AS can_update_store_status,
+       has_function_privilege('exgarasi_app', 'public.app_review_seller_verification(uuid,text,text)', 'EXECUTE') AS can_review_through_function;
+```
+
+Expected result: `false`, `false`, `true` respectively.
 
 From the repository branch `feat/marketplace-foundation`, install dependencies with `npm ci`. Migrations 0001–0013 are already applied to EXGARASI-dev through the Supabase managed migration tool. Do not run `npm run db:migrate` with the runtime role: the dedicated migration login and ownership model are not enabled yet. The Supabase migration history records applied migrations. A matching `public.schema_migrations` ledger has been seeded to prevent the repository runner from replaying those files. Migrations 0001–0013 include the marketplace schema, Better Auth tables, application identity mapping, RLS, stock functions, least-privilege policies, Supabase API hardening, foreign-key indexes, private-schema RLS and migration-ledger isolation.
 
