@@ -191,18 +191,22 @@ export async function getAuth() {
   const googleCredentialsAvailable = Boolean(googleClientId && googleClientSecret);
   console.info("[auth] Google OAuth credentials available:", googleCredentialsAvailable);
   const production = process.env.NODE_ENV === "production";
-  const trustedOrigins = [
-    "https://exgarasi.id",
-    "https://www.exgarasi.id",
-    "https://feat-seller-verification-exgarasi.exgarasi-id.workers.dev",
-    "http://localhost:3000",
+  const allowedHosts = [
+    "exgarasi.id",
+    "www.exgarasi.id",
+    "feat-seller-verification-exgarasi.exgarasi-id.workers.dev",
+    ...(production ? [] : ["localhost:3000"]),
   ];
   const auth = betterAuth({
     appName: "EXGARASI",
     secret,
-    // Leave baseURL unset so Better Auth resolves the active request origin.
-    // This prevents a Preview Worker from redirecting OAuth to Production.
-    trustedOrigins,
+    // Resolve callback hosts per request, but only for explicitly allowed
+    // production and preview hosts. This prevents preview-to-production leaks.
+    baseURL: {
+      allowedHosts,
+      protocol: "auto",
+      fallback: "https://exgarasi.id",
+    },
     database: drizzleAdapter(database.db, { provider: "pg", schema: authSchemaTables }),
     ...(googleCredentialsAvailable
       ? {
