@@ -10,7 +10,7 @@ export async function GET() {
       if (!roles.length) throw new Error("FORBIDDEN");
       return tx`
         select sv.id,sv.verification_type,sv.status,sv.review_note,sv.submitted_at,sv.reviewed_at,
-          s.id as store_id,s.name as store_name,s.slug,s.status as store_status,
+          s.id as store_id,s.name as store_name,s.slug as store_slug,s.status as store_status,
           u.full_name as owner_name,u.email as owner_email
         from public.seller_verifications sv
         join public.stores s on s.id=sv.store_id
