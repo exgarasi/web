@@ -1,4 +1,5 @@
 import { betterAuth } from "better-auth";
+import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { getDatabase } from "@/db";
 import { authSchemaTables } from "@/db/auth-schema";
@@ -174,28 +175,30 @@ export async function getAuth() {
   }
 
   const database = await getDatabase();
-  // Cloudflare Workers exposes configured vars/secrets through process.env when
-  // nodejs_compat is enabled and nodejs_compat_populate_process_env is active.
-  const googleClientId = process.env.GOOGLE_CLIENT_ID;
-  const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  console.info("[auth] Google OAuth credentials available:", Boolean(googleClientId && googleClientSecret));
+  // Read secrets from the request's Cloudflare Worker environment first.
+  // process.env is retained as a local/Node.js fallback.
+  const { env } = getCloudflareContext();
+  const runtimeEnv = env as unknown as Record<string, string | undefined>;
+  const googleClientId = runtimeEnv.GOOGLE_CLIENT_ID ?? process.env.GOOGLE_CLIENT_ID ?? "";
+  const googleClientSecret = runtimeEnv.GOOGLE_CLIENT_SECRET ?? process.env.GOOGLE_CLIENT_SECRET ?? "";
+  const googleCredentialsAvailable = Boolean(googleClientId && googleClientSecret);
+  console.info("[auth] Google OAuth credentials available:", googleCredentialsAvailable);
   const production = process.env.NODE_ENV === "production";
   const auth = betterAuth({
     appName: "EXGARASI",
     secret,
     baseURL: process.env.APP_BASE_URL ?? process.env.NEXT_PUBLIC_APP_URL,
     database: drizzleAdapter(database.db, { provider: "pg", schema: authSchemaTables }),
-    ...(googleClientId && googleClientSecret
-      ? {
-          socialProviders: {
-            google: {
-              clientId: googleClientId,
-              clientSecret: googleClientSecret,
-              prompt: "select_account",
-            },
-          },
-        }
-      : {}),
+    // Always register the provider so Better Auth never responds with
+    // "Provider not found". If secrets are absent, Google will return a
+    // configuration error instead, and the diagnostic above will show false.
+    socialProviders: {
+      google: {
+        clientId: googleClientId || "GOOGLE_CLIENT_ID_NOT_CONFIGURED",
+        clientSecret: googleClientSecret || "GOOGLE_CLIENT_SECRET_NOT_CONFIGURED",
+        prompt: "select_account",
+      },
+    },
     emailAndPassword: {
       enabled: true,
       requireEmailVerification: production,
