@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { getCurrentUser } from "@/lib/current-user";
 import { withAuthenticatedDb } from "@/lib/db-context";
 import { AccountHeader } from "@/components/account-header";
@@ -38,7 +39,7 @@ export default async function BuyerDashboard() {
             <div className="px-6 py-12 text-center">
               <p className="text-sm font-semibold text-[#344054]">Belum ada pesanan</p>
               <p className="mt-1 text-xs text-[#7b8794]">Pesanan Anda akan muncul di sini setelah checkout.</p>
-              <a href="/catalog" className="mt-5 inline-flex min-h-10 items-center justify-center rounded-xl bg-[#0099ff] px-5 text-xs font-bold text-white transition hover:bg-[#0077cc] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0099ff] focus-visible:ring-offset-2">Jelajahi marketplace</a>
+              <Link href="/catalog" className="mt-5 inline-flex min-h-10 items-center justify-center rounded-xl bg-[#0099ff] px-5 text-xs font-bold text-white transition hover:bg-[#0077cc] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0099ff] focus-visible:ring-offset-2">Jelajahi marketplace</Link>
             </div>
           ) : (
             <div className="divide-y divide-[#edf0f4]">
