@@ -43,7 +43,9 @@ function parseEmailFrom(value: string) {
 }
 
 async function sendWithResend(message: EmailMessage, from: string) {
-  const apiKey = process.env.RESEND_API_KEY;
+  const { env } = getCloudflareContext();
+  const runtimeEnv = env as unknown as Record<string, string | undefined>;
+  const apiKey = runtimeEnv.RESEND_API_KEY ?? process.env.RESEND_API_KEY;
   if (!apiKey) throw new Error("RESEND_API_KEY is not configured.");
 
   const response = await fetch("https://api.resend.com/emails", {
@@ -77,7 +79,9 @@ async function sendWithResend(message: EmailMessage, from: string) {
 }
 
 async function sendWithBrevo(message: EmailMessage, from: string) {
-  const apiKey = process.env.BREVO_API_KEY;
+  const { env } = getCloudflareContext();
+  const runtimeEnv = env as unknown as Record<string, string | undefined>;
+  const apiKey = runtimeEnv.BREVO_API_KEY ?? process.env.BREVO_API_KEY;
   if (!apiKey) throw new Error("BREVO_API_KEY is not configured.");
 
   const sender = parseEmailFrom(from);
@@ -136,7 +140,9 @@ function shouldUseBrevoFallback(error: unknown) {
 }
 
 async function sendEmail(message: EmailMessage) {
-  const from = process.env.EMAIL_FROM;
+  const { env } = getCloudflareContext();
+  const runtimeEnv = env as unknown as Record<string, string | undefined>;
+  const from = runtimeEnv.EMAIL_FROM ?? process.env.EMAIL_FROM;
   if (!from) throw new Error("EMAIL_FROM must be configured to send emails.");
 
   try {
@@ -169,36 +175,46 @@ async function sendPasswordResetEmail(to: string, url: string) {
 }
 
 export async function getAuth() {
-  const secret = process.env.AUTH_SECRET;
+  // Cloudflare Worker bindings are authoritative in deployed environments.
+  // process.env is only a fallback for local Node.js development.
+  const { env } = getCloudflareContext();
+  const runtimeEnv = env as unknown as Record<string, string | undefined>;
+  const readEnv = (key: string) => runtimeEnv[key] ?? process.env[key];
+  const secret = readEnv("AUTH_SECRET");
   if (!secret || secret.length < 32) {
     throw new Error("AUTH_SECRET must be configured with at least 32 characters.");
   }
 
   const database = await getDatabase();
-  // Read secrets from the request's Cloudflare Worker environment first.
-  // process.env is retained as a local/Node.js fallback.
-  const { env } = getCloudflareContext();
-  const runtimeEnv = env as unknown as Record<string, string | undefined>;
-  const googleClientId = runtimeEnv.GOOGLE_CLIENT_ID ?? process.env.GOOGLE_CLIENT_ID ?? "";
-  const googleClientSecret = runtimeEnv.GOOGLE_CLIENT_SECRET ?? process.env.GOOGLE_CLIENT_SECRET ?? "";
+  const googleClientId = readEnv("GOOGLE_CLIENT_ID") ?? "";
+  const googleClientSecret = readEnv("GOOGLE_CLIENT_SECRET") ?? "";
   const googleCredentialsAvailable = Boolean(googleClientId && googleClientSecret);
   console.info("[auth] Google OAuth credentials available:", googleCredentialsAvailable);
   const production = process.env.NODE_ENV === "production";
+  const trustedOrigins = [
+    "https://exgarasi.id",
+    "https://www.exgarasi.id",
+    "https://feat-seller-verification-exgarasi.exgarasi-id.workers.dev",
+    "http://localhost:3000",
+  ];
   const auth = betterAuth({
     appName: "EXGARASI",
     secret,
-    baseURL: process.env.APP_BASE_URL ?? process.env.NEXT_PUBLIC_APP_URL,
+    // Leave baseURL unset so Better Auth resolves the active request origin.
+    // This prevents a Preview Worker from redirecting OAuth to Production.
+    trustedOrigins,
     database: drizzleAdapter(database.db, { provider: "pg", schema: authSchemaTables }),
-    // Always register the provider so Better Auth never responds with
-    // "Provider not found". If secrets are absent, Google will return a
-    // configuration error instead, and the diagnostic above will show false.
-    socialProviders: {
-      google: {
-        clientId: googleClientId || "GOOGLE_CLIENT_ID_NOT_CONFIGURED",
-        clientSecret: googleClientSecret || "GOOGLE_CLIENT_SECRET_NOT_CONFIGURED",
-        prompt: "select_account",
-      },
-    },
+    ...(googleCredentialsAvailable
+      ? {
+          socialProviders: {
+            google: {
+              clientId: googleClientId,
+              clientSecret: googleClientSecret,
+              prompt: "select_account" as const,
+            },
+          },
+        }
+      : {}),
     emailAndPassword: {
       enabled: true,
       requireEmailVerification: production,
