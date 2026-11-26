@@ -90,7 +90,7 @@ Set secrets with `wrangler secret put`. Do not place real secrets in GitHub or `
 
 ## 5. Applied migrations and seller-verification rollout
 
-Migrations 0001–0013 and 0014 are recorded as applied in EXGARASI-dev. Migration 0015 is a new security hardening migration and has not yet been applied. Apply it through the Supabase managed migration control plane in EXGARASI-dev, verify the function and grants, then record it in the migration history and `public.schema_migrations`. Do not apply it to production until the development validation passes.
+Migrations 0001–0015 are recorded as applied in EXGARASI-dev through the Supabase managed migration control plane. Migrations 0014 and 0015 were applied successfully to EXGARASI-dev only; production has not been migrated. The post-migration privilege checks confirmed that `exgarasi_app` cannot directly update seller-verification status, review notes, or store status, and can execute `public.app_review_seller_verification(uuid,text,text)`. The `anon` and `authenticated` roles cannot execute that function. Supabase Security Advisor returned no findings at the time of verification. These checks validate database privileges, not the complete browser workflow. Do not apply these migrations to production until the development application tests pass.
 
 Before applying migration 0014 to any other database, check for duplicate pending requests:
 
@@ -104,15 +104,20 @@ HAVING count(*) > 1;
 
 The query must return no rows before creating the partial unique index. Review and resolve any duplicates deliberately; do not delete verification records automatically.
 
-After applying migration 0015, verify that the runtime role cannot directly update the protected columns and can execute the guarded review function:
+To re-check the migration 0015 privileges in EXGARASI-dev, run:
 
 ```sql
 SELECT has_column_privilege('exgarasi_app', 'public.seller_verifications', 'status', 'UPDATE') AS can_update_verification_status,
+       has_column_privilege('exgarasi_app', 'public.seller_verifications', 'review_note', 'UPDATE') AS can_update_review_note,
+       has_column_privilege('exgarasi_app', 'public.seller_verifications', 'reviewer_user_id', 'UPDATE') AS can_update_reviewer,
+       has_column_privilege('exgarasi_app', 'public.seller_verifications', 'reviewed_at', 'UPDATE') AS can_update_reviewed_at,
        has_column_privilege('exgarasi_app', 'public.stores', 'status', 'UPDATE') AS can_update_store_status,
-       has_function_privilege('exgarasi_app', 'public.app_review_seller_verification(uuid,text,text)', 'EXECUTE') AS can_review_through_function;
+       has_function_privilege('exgarasi_app', 'public.app_review_seller_verification(uuid,text,text)', 'EXECUTE') AS can_review_through_function,
+       has_function_privilege('anon', 'public.app_review_seller_verification(uuid,text,text)', 'EXECUTE') AS anon_can_review,
+       has_function_privilege('authenticated', 'public.app_review_seller_verification(uuid,text,text)', 'EXECUTE') AS authenticated_can_review;
 ```
 
-Expected result: `false`, `false`, `true` respectively.
+Expected result: the five direct-update privileges are `false`; `can_review_through_function` is `true`; `anon_can_review` and `authenticated_can_review` are `false`.
 
 From the repository branch `feat/marketplace-foundation`, install dependencies with `npm ci`. Migrations 0001–0013 are already applied to EXGARASI-dev through the Supabase managed migration tool. Do not run `npm run db:migrate` with the runtime role: the dedicated migration login and ownership model are not enabled yet. The Supabase migration history records applied migrations. A matching `public.schema_migrations` ledger has been seeded to prevent the repository runner from replaying those files. Migrations 0001–0013 include the marketplace schema, Better Auth tables, application identity mapping, RLS, stock functions, least-privilege policies, Supabase API hardening, foreign-key indexes, private-schema RLS and migration-ledger isolation.
 
