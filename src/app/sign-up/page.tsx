@@ -3,9 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, ShieldCheck, UserRoundPlus } from "lucide-react";
+import { ArrowLeft, ArrowRight, Chrome, ShieldCheck, UserRoundPlus } from "lucide-react";
 import { CurrencySwitcher, LanguageSwitcher, useLocale } from "@/components/locale-provider";
-import { signUp } from "@/lib/auth-client";
+import { signIn, signUp } from "@/lib/auth-client";
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -17,6 +17,19 @@ export default function SignUpPage() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
+
+  async function signUpWithGoogle() {
+    setBusy(true);
+    setError("");
+    try {
+      const result = await signIn.social({ provider: "google", callbackURL: "/account/dashboard" });
+      if (result.error) setError(result.error.message ?? (id ? "Gagal mendaftar dengan Google." : "Unable to sign up with Google."));
+    } catch {
+      setError(id ? "Gagal memulai pendaftaran Google. Silakan coba lagi." : "Could not start Google sign-up. Please try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -46,7 +59,9 @@ export default function SignUpPage() {
           <p className="mt-8 text-[10px] font-bold tracking-[.25em] text-[#0099ff]">CREATE YOUR ACCOUNT</p>
           <h1 className="mt-3 text-4xl font-semibold tracking-[-.05em] text-[#111318]">{id ? "Bergabung dengan EXGARASI." : "Join EXGARASI."}</h1>
           <p className="mt-3 text-[13px] leading-6 text-[#7b8794]">{id ? "Mulai perjalanan Anda di marketplace otomotif." : "Start your journey in the automotive marketplace."}</p>
-          <form onSubmit={submit} className="mt-8 space-y-4">
+          <button type="button" onClick={signUpWithGoogle} disabled={busy} className="mt-8 flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-[#dfe5eb] bg-white text-[12px] font-bold text-[#27313d] transition hover:border-[#0099ff] hover:bg-[#f8fcff] disabled:cursor-not-allowed disabled:opacity-50"><Chrome size={17}/> {id ? "Daftar dengan Google" : "Sign up with Google"}</button>
+          <div className="my-5 flex items-center gap-3 text-[10px] font-semibold uppercase tracking-wider text-[#a0a9b5]"><span className="h-px flex-1 bg-[#e8edf2]"/>{id ? "atau dengan email" : "or with email"}<span className="h-px flex-1 bg-[#e8edf2]"/></div>
+          <form onSubmit={submit} className="space-y-4">
             <label className="block text-[11px] font-bold text-[#333b48]">{id ? "Nama lengkap" : "Full name"}<input required minLength={2} autoComplete="name" value={name} onChange={e=>setName(e.target.value)} placeholder={id ? "Nama Anda" : "Your name"} className="mt-2.5 h-12 w-full rounded-xl border border-[#dfe5eb] bg-[#fbfcfd] px-4 text-[13px] font-normal outline-none transition placeholder:text-[#a5aeba] focus:border-[#0099ff] focus:bg-white focus:ring-4 focus:ring-[#0099ff]/10"/></label>
             <label className="block text-[11px] font-bold text-[#333b48]">{id ? "Alamat email" : "Email address"}<input type="email" required autoComplete="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="nama@email.com" className="mt-2.5 h-12 w-full rounded-xl border border-[#dfe5eb] bg-[#fbfcfd] px-4 text-[13px] font-normal outline-none transition placeholder:text-[#a5aeba] focus:border-[#0099ff] focus:bg-white focus:ring-4 focus:ring-[#0099ff]/10"/></label>
             <label className="block text-[11px] font-bold text-[#333b48]">{id ? "Kata sandi · minimal 9 karakter" : "Password · at least 9 characters"}<input type="password" required minLength={9} autoComplete="new-password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="•••••••••" className="mt-2.5 h-12 w-full rounded-xl border border-[#dfe5eb] bg-[#fbfcfd] px-4 text-[13px] font-normal outline-none transition placeholder:text-[#a5aeba] focus:border-[#0099ff] focus:bg-white focus:ring-4 focus:ring-[#0099ff]/10"/></label>
