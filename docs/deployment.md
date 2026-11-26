@@ -104,7 +104,7 @@ HAVING count(*) > 1;
 
 The query must return no rows before creating the partial unique index. Review and resolve any duplicates deliberately; do not delete verification records automatically.
 
-After applying migration 0015, verify that the runtime role cannot directly update the protected columns and can execute only the guarded review function:
+After applying migration 0015, verify that the runtime role cannot directly update the protected columns and can execute the guarded review function:
 
 ```sql
 SELECT has_column_privilege('exgarasi_app', 'public.seller_verifications', 'status', 'UPDATE') AS can_update_verification_status,
