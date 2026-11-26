@@ -179,7 +179,11 @@ export async function getAuth() {
   // process.env is only a fallback for local Node.js development.
   const { env } = getCloudflareContext();
   const runtimeEnv = env as unknown as Record<string, string | undefined>;
-  const readEnv = (key: string) => runtimeEnv[key] ?? process.env[key];
+  // Cloudflare Workers with nodejs_compat_populate_process_env expose
+  // bindings/secrets through process.env. Prefer that documented runtime
+  // surface, then fall back to the request's Cloudflare env bindings.
+  const readEnv = (key: string) =>
+    process.env[key]?.trim() || runtimeEnv[key]?.trim() || "";
   const secret = readEnv("AUTH_SECRET");
   if (!secret || secret.length < 32) {
     throw new Error("AUTH_SECRET must be configured with at least 32 characters.");
