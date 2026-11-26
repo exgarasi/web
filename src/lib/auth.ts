@@ -10,6 +10,21 @@ type EmailMessage = {
   text?: string;
 };
 
+class ResendDeliveryError extends Error {
+  readonly code: string | null;
+
+  constructor(readonly status: number, readonly response: string) {
+    super(`Resend rejected the email (HTTP ${status}): ${response.slice(0, 500)}`);
+    this.name = "ResendDeliveryError";
+    try {
+      const payload = JSON.parse(response) as { name?: unknown };
+      this.code = typeof payload.name === "string" ? payload.name : null;
+    } catch {
+      this.code = null;
+    }
+  }
+}
+
 function parseEmailFrom(value: string) {
   // Accept both "EXGARASI <noreply@exgarasi.id>" and a plain email address.
   const match = value.trim().match(/^\s*(.*?)\s*<([^<>]+)>\s*$/);
@@ -21,6 +36,40 @@ function parseEmailFrom(value: string) {
   }
 
   return { name, email };
+}
+
+async function sendWithResend(message: EmailMessage, from: string) {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) throw new Error("RESEND_API_KEY is not configured.");
+
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from,
+      to: [message.to],
+      subject: message.subject,
+      html: message.html,
+      ...(message.text ? { text: message.text } : {}),
+    }),
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    console.error("[email] Resend delivery failed.", {
+      status: response.status,
+      response: errorBody.slice(0, 2000),
+    });
+    throw new ResendDeliveryError(response.status, errorBody);
+  }
+
+  const result = (await response.json()) as { id?: string };
+  console.info("[email] Email accepted by Resend.", {
+    messageId: result.id ?? "not-provided",
+  });
 }
 
 async function sendWithBrevo(message: EmailMessage, from: string) {
@@ -46,27 +95,50 @@ async function sendWithBrevo(message: EmailMessage, from: string) {
 
   if (!response.ok) {
     const errorBody = await response.text();
-    console.error("[email] Brevo delivery failed.", {
+    console.error("[email] Brevo fallback delivery failed.", {
       status: response.status,
       response: errorBody.slice(0, 2000),
     });
     throw new Error(
-      `Brevo rejected the email (HTTP ${response.status}): ${errorBody.slice(0, 500)}`,
+      `Brevo rejected the fallback email (HTTP ${response.status}): ${errorBody.slice(0, 500)}`,
     );
   }
 
   const result = (await response.json()) as { messageId?: string };
-  console.info("[email] Email accepted by Brevo.", {
+  console.info("[email] Email accepted by Brevo fallback.", {
     messageId: result.messageId ?? "not-provided",
   });
+}
+
+function shouldUseBrevoFallback(error: unknown) {
+  if (!(error instanceof ResendDeliveryError)) return false;
+
+  const fallbackCodes = new Set([
+    "rate_limit_exceeded",
+    "daily_quota_exceeded",
+    "monthly_quota_exceeded",
+  ]);
+
+  return (
+    error.status === 429 ||
+    (error.code !== null && fallbackCodes.has(error.code)) ||
+    /quota|daily.{0,30}limit|monthly.{0,30}limit|sending limit|limit exceeded/i.test(
+      error.response,
+    )
+  );
 }
 
 async function sendEmail(message: EmailMessage) {
   const from = process.env.EMAIL_FROM;
   if (!from) throw new Error("EMAIL_FROM must be configured to send emails.");
 
-  // Brevo-only mode: do not silently fall back to Resend.
-  await sendWithBrevo(message, from);
+  try {
+    await sendWithResend(message, from);
+  } catch (error) {
+    if (!shouldUseBrevoFallback(error)) throw error;
+    console.warn("[email] Resend quota/rate limit reached; switching to Brevo.");
+    await sendWithBrevo(message, from);
+  }
 }
 
 async function sendVerificationEmail(to: string, url: string) {
