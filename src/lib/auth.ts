@@ -1,4 +1,5 @@
 import { betterAuth } from "better-auth";
+import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { getDatabase } from "@/db";
 import { authSchemaTables } from "@/db/auth-schema";
@@ -174,18 +175,20 @@ export async function getAuth() {
   }
 
   const database = await getDatabase();
+  const { env } = getCloudflareContext();
+  const runtimeEnv = env as unknown as Record<string, string | undefined>;
   const production = process.env.NODE_ENV === "production";
   const auth = betterAuth({
     appName: "EXGARASI",
     secret,
     baseURL: process.env.APP_BASE_URL ?? process.env.NEXT_PUBLIC_APP_URL,
     database: drizzleAdapter(database.db, { provider: "pg", schema: authSchemaTables }),
-    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+    ...(runtimeEnv.GOOGLE_CLIENT_ID && runtimeEnv.GOOGLE_CLIENT_SECRET
       ? {
           socialProviders: {
             google: {
-              clientId: process.env.GOOGLE_CLIENT_ID,
-              clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+              clientId: runtimeEnv.GOOGLE_CLIENT_ID,
+              clientSecret: runtimeEnv.GOOGLE_CLIENT_SECRET,
               prompt: "select_account",
             },
           },
