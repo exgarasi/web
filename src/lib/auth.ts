@@ -183,7 +183,7 @@ export async function getAuth() {
     emailAndPassword: {
       enabled: true,
       requireEmailVerification: production,
-      minPasswordLength: 10,
+      minPasswordLength: 9,
       maxPasswordLength: 128,
       resetPasswordTokenExpiresIn: 60 * 60,
       revokeSessionsOnPasswordReset: true,
