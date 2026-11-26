@@ -3,6 +3,8 @@ import { ArrowLeft, ArrowUpRight, Search, SlidersHorizontal } from "lucide-react
 import { LanguageSwitcher, CurrencySwitcher } from "@/components/locale-provider";
 import { getDatabase } from "@/db";
 import { CatalogGrid, type CatalogProduct } from "./catalog-grid";
+import { getCurrentUser } from "@/lib/current-user";
+import { AccountHeader } from "@/components/account-header";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -10,7 +12,7 @@ export const dynamic = "force-dynamic";
 type SearchParams = Promise<{ q?: string; category?: string }>;
 
 export default async function CatalogPage({ searchParams }: { searchParams: SearchParams }) {
-  const params = await searchParams;
+  const [params, user] = await Promise.all([searchParams, getCurrentUser()]);
   const search = (params.q ?? "").trim().slice(0, 80);
   const category = (params.category ?? "").trim().slice(0, 80);
   const db = await getDatabase();
@@ -73,12 +75,16 @@ export default async function CatalogPage({ searchParams }: { searchParams: Sear
 
   return (
     <main className="min-h-screen bg-[#f7f9fc] text-[#111318]">
+      {user ? (
+        <AccountHeader name={user.full_name || "EXGARASI member"} email={user.email} roles={user.roles as string[]} />
+      ) : (
       <header className="sticky top-0 z-30 border-b border-[#e9edf2] bg-white/95 backdrop-blur-xl">
         <div className="mx-auto flex h-[72px] max-w-[1440px] items-center justify-between gap-4 px-5 sm:px-8 lg:px-12">
           <Link href="/" className="flex items-center gap-2.5"><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#111318] text-[13px] font-black tracking-[-.08em] text-white">EX</span><span className="text-[18px] font-black tracking-[.16em]">EXGARASI<span className="text-[#0099ff]">.</span></span></Link>
           <div className="flex items-center gap-2"><LanguageSwitcher/><div className="hidden sm:block"><CurrencySwitcher/></div><Link href="/sign-in" className="inline-flex min-h-10 items-center justify-center whitespace-nowrap rounded-full bg-[#111318] px-5 py-2.5 text-[12px] font-bold leading-none !text-white transition hover:bg-[#0099ff]"><span>Masuk</span></Link></div>
         </div>
       </header>
+      )}
       <section className="border-b border-[#e9edf2] bg-white">
         <div className="mx-auto max-w-[1440px] px-5 pb-9 pt-8 sm:px-8 sm:pb-12 lg:px-12">
           <Link href="/" className="inline-flex items-center gap-2 text-[11px] font-semibold text-[#8993a1] transition hover:text-[#0099ff]"><ArrowLeft size={13}/> Beranda</Link>
