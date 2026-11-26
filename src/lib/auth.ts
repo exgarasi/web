@@ -43,9 +43,7 @@ function parseEmailFrom(value: string) {
 }
 
 async function sendWithResend(message: EmailMessage, from: string) {
-  const { env } = getCloudflareContext();
-  const runtimeEnv = env as unknown as Record<string, string | undefined>;
-  const apiKey = runtimeEnv.RESEND_API_KEY ?? process.env.RESEND_API_KEY;
+  const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) throw new Error("RESEND_API_KEY is not configured.");
 
   const response = await fetch("https://api.resend.com/emails", {
@@ -79,9 +77,7 @@ async function sendWithResend(message: EmailMessage, from: string) {
 }
 
 async function sendWithBrevo(message: EmailMessage, from: string) {
-  const { env } = getCloudflareContext();
-  const runtimeEnv = env as unknown as Record<string, string | undefined>;
-  const apiKey = runtimeEnv.BREVO_API_KEY ?? process.env.BREVO_API_KEY;
+  const apiKey = process.env.BREVO_API_KEY;
   if (!apiKey) throw new Error("BREVO_API_KEY is not configured.");
 
   const sender = parseEmailFrom(from);
@@ -140,9 +136,7 @@ function shouldUseBrevoFallback(error: unknown) {
 }
 
 async function sendEmail(message: EmailMessage) {
-  const { env } = getCloudflareContext();
-  const runtimeEnv = env as unknown as Record<string, string | undefined>;
-  const from = runtimeEnv.EMAIL_FROM ?? process.env.EMAIL_FROM;
+  const from = process.env.EMAIL_FROM;
   if (!from) throw new Error("EMAIL_FROM must be configured to send emails.");
 
   try {
@@ -175,12 +169,8 @@ async function sendPasswordResetEmail(to: string, url: string) {
 }
 
 export async function getAuth() {
-  // Read Cloudflare runtime configuration from the Worker environment.
   const { env } = getCloudflareContext();
   const runtimeEnv = env as unknown as Record<string, string | undefined>;
-  // Cloudflare Workers with nodejs_compat_populate_process_env expose
-  // bindings/secrets through process.env. Prefer that documented runtime
-  // surface, then fall back to the request's Cloudflare env bindings.
   const readEnv = (key: string) =>
     process.env[key]?.trim() || runtimeEnv[key]?.trim() || "";
   const secret = readEnv("AUTH_SECRET");
@@ -188,25 +178,23 @@ export async function getAuth() {
     throw new Error("AUTH_SECRET must be configured with at least 32 characters.");
   }
 
-  const database = await getDatabase();
-  const googleClientId = readEnv("GOOGLE_CLIENT_ID") ?? "";
-  const googleClientSecret = readEnv("GOOGLE_CLIENT_SECRET") ?? "";
+  const googleClientId = readEnv("GOOGLE_CLIENT_ID");
+  const googleClientSecret = readEnv("GOOGLE_CLIENT_SECRET");
   const googleCredentialsAvailable = Boolean(googleClientId && googleClientSecret);
   console.info("[auth] Google OAuth credentials available:", googleCredentialsAvailable);
+
+  const database = await getDatabase();
   const production = process.env.NODE_ENV === "production";
-  const allowedHosts = [
-    "exgarasi.id",
-    "www.exgarasi.id",
-    "feat-seller-verification-exgarasi.exgarasi-id.workers.dev",
-    ...(production ? [] : ["localhost:3000"]),
-  ];
   const auth = betterAuth({
     appName: "EXGARASI",
     secret,
-    // Resolve callback hosts per request, but only for explicitly allowed
-    // production and preview hosts. This prevents preview-to-production leaks.
     baseURL: {
-      allowedHosts,
+      allowedHosts: [
+        "exgarasi.id",
+        "www.exgarasi.id",
+        "fix-google-oauth-prod-isolated-exgarasi.exgarasi-id.workers.dev",
+        "feat-seller-verification-exgarasi.exgarasi-id.workers.dev",
+      ],
       protocol: "auto",
       fallback: "https://exgarasi.id",
     },
@@ -225,7 +213,7 @@ export async function getAuth() {
     emailAndPassword: {
       enabled: true,
       requireEmailVerification: production,
-      minPasswordLength: 9,
+      minPasswordLength: 10,
       maxPasswordLength: 128,
       resetPasswordTokenExpiresIn: 60 * 60,
       revokeSessionsOnPasswordReset: true,
