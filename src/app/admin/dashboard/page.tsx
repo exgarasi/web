@@ -76,7 +76,9 @@ export default async function AdminDashboard() {
   });
 
   return (
-    <div className="min-h-screen bg-[#f7f9fc] text-gray-950 lg:flex">
+    <>
+      <AccountHeader name={user.full_name || "Administrator"} email={user.email} roles={roles} active="admin" />
+      <div className="min-h-screen bg-[#f7f9fc] text-gray-950 lg:flex">
       <aside className="border-b border-gray-200 bg-white lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col lg:border-b-0 lg:border-r">
         <div className="flex h-16 items-center gap-3 border-b border-gray-100 px-5">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#0099ff] text-sm font-black text-white">EX</div>
@@ -196,6 +198,7 @@ export default async function AdminDashboard() {
           </footer>
         </div>
       </main>
-    </div>
+      </div>
+    </>
   );
 }
