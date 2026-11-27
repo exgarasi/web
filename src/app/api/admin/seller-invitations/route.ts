@@ -7,8 +7,26 @@ export const runtime = "nodejs";
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null) as { email?: string } | null;
   const email = body?.email?.trim().toLowerCase();
-  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+  if (!email || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email))
     return NextResponse.json({ error: "A valid seller email is required." }, { status: 400 });
+
+  // Resolve and validate the public origin before writing anything. This prevents
+  // orphaned invitation rows when an environment variable is missing or malformed.
+  const configuredBaseUrl = process.env.APP_BASE_URL || process.env.NEXT_PUBLIC_APP_URL || "https://exgarasi.id";
+  let invitationBaseUrl: URL;
+  try {
+    invitationBaseUrl = new URL(configuredBaseUrl);
+    if (!["https:", "http:"].includes(invitationBaseUrl.protocol) ||
+        (invitationBaseUrl.protocol === "http:" && !["localhost", "127.0.0.1"].includes(invitationBaseUrl.hostname)) ||
+        invitationBaseUrl.username || invitationBaseUrl.password) {
+      throw new Error("Invalid application URL");
+    }
+    invitationBaseUrl.pathname = "/";
+    invitationBaseUrl.search = "";
+    invitationBaseUrl.hash = "";
+  } catch {
+    return NextResponse.json({ error: "Application URL is not configured correctly." }, { status: 500 });
+  }
 
   try {
     const result = await withAuthenticatedDb(async (tx) => {
@@ -23,13 +41,12 @@ export async function POST(request: Request) {
       `;
       return { invitationId: rows[0].id, expiresAt: rows[0].expires_at, rawToken };
     });
-    const baseUrl = process.env.APP_BASE_URL ?? process.env.NEXT_PUBLIC_APP_URL;
-    if (!baseUrl) return NextResponse.json({ error: "Application URL is not configured." }, { status: 500 });
-    const acceptUrl = new URL("/seller/accept-invitation", baseUrl);
+    const acceptUrl = new URL("/seller/accept-invitation", invitationBaseUrl);
     acceptUrl.searchParams.set("token", result.rawToken);
     return NextResponse.json({ invitationId: result.invitationId, email, expiresAt: result.expiresAt, acceptUrl: acceptUrl.toString() }, { status: 201 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Invitation failed.";
-    return NextResponse.json({ error: message }, { status: message === "FORBIDDEN" ? 403 : 401 });
+    const status = message === "FORBIDDEN" ? 403 : message === "UNAUTHENTICATED" ? 401 : 500;
+    return NextResponse.json({ error: message }, { status });
   }
 }
