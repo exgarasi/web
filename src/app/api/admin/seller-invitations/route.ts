@@ -7,7 +7,7 @@ export const runtime = "nodejs";
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null) as { email?: string } | null;
   const email = body?.email?.trim().toLowerCase();
-  if (!email || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email))
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
     return NextResponse.json({ error: "A valid seller email is required." }, { status: 400 });
 
   // Resolve and validate the public origin before writing anything. This prevents
@@ -30,15 +30,15 @@ export async function POST(request: Request) {
 
   try {
     const result = await withAuthenticatedDb(async (tx) => {
-      const roles = await tx`select role from public.user_roles where user_id = public.app_current_user_id() and role in ('admin','super_admin')`;
+      const roles = await tx\`select role from public.user_roles where user_id = public.app_current_user_id() and role in ('admin','super_admin')\`;
       if (!roles.length) throw new Error("FORBIDDEN");
       const rawToken = randomBytes(32).toString("base64url");
       const tokenHash = createHash("sha256").update(rawToken).digest("hex");
-      const rows = await tx`
+      const rows = await tx\`
         insert into public.seller_invitations(email,invited_by,token_hash,expires_at)
-        values(${email},public.app_current_user_id(),${tokenHash},now()+interval '7 days')
+        values(\${email},public.app_current_user_id(),\${tokenHash},now()+interval '7 days')
         returning id,expires_at
-      `;
+      \`;
       return { invitationId: rows[0].id, expiresAt: rows[0].expires_at, rawToken };
     });
     const acceptUrl = new URL("/seller/accept-invitation", invitationBaseUrl);
