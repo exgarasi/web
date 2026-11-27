@@ -203,3 +203,8 @@ The script rolls back its fixtures. Follow it with manual signup, email verifica
 - Add invitation email delivery, password recovery, rate limiting and abuse controls.
 - Implement checkout, payment webhooks, shipping, refund and ledger reconciliation before real transactions.
 - Configure backups, restore drills, monitoring and a production incident process.
+
+
+### Public listing images (Cloudflare R2)
+
+Listing image records store R2 object keys in `listing_images.object_key`. The catalog and product detail pages resolve those keys using the `R2_PUBLIC_BASE_URL` runtime variable. Set it to the HTTPS public/custom domain configured for the `exgarasi-media` bucket (for example, `https://media.example.com`, not a guessed value). Keep the bucket private if images are not intended to be public; in that case implement authenticated image delivery before enabling listing uploads. Absolute HTTPS image URLs remain supported for legacy records. After setting the variable in the Cloudflare Worker environment, redeploy the Worker for it to take effect.
