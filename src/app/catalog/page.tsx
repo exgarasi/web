@@ -5,6 +5,7 @@ import { getDatabase } from "@/db";
 import { CatalogGrid, type CatalogProduct } from "./catalog-grid";
 import { getCurrentUser } from "@/lib/current-user";
 import { AccountHeader } from "@/components/account-header";
+import { resolvePublicImageUrl } from "@/lib/image-url";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -64,7 +65,7 @@ export default async function CatalogPage({ searchParams }: { searchParams: Sear
       brandName: row.brand_name ? String(row.brand_name) : null,
       storeName: String(row.store_name),
       stock: Number(row.stock ?? 0),
-      imageUrl: row.image_url && /^https?:\/\//i.test(String(row.image_url)) ? String(row.image_url) : null,
+      imageUrl: resolvePublicImageUrl(row.image_url ? String(row.image_url) : null),
     }));
     categories = categoryRows.map((row) => ({ name: String(row.name), slug: String(row.slug) }));
   } catch (error) {
