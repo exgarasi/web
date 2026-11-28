@@ -93,7 +93,14 @@ export function CheckoutView() {
     } finally { setBusy(false); }
   }
 
-  async function refreshPaymentStatus(orderId: string) {\n    const response = await fetch("/api/payments/proof?orderId=" + orderId, { cache: "no-store" });\n    const payload = await response.json();\n    if (!response.ok) throw new Error(payload.error || "Gagal memuat status pembayaran.");\n    setOrder(payload.order);\n  }\n\n  async function uploadProof() {
+  async function refreshPaymentStatus(orderId: string) {
+    const response = await fetch("/api/payments/proof?orderId=" + orderId, { cache: "no-store" });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.error || "Gagal memuat status pembayaran.");
+    setOrder(payload.order);
+  }
+
+  async function uploadProof() {
     if (!order || !proofFile) { setProofError("Pilih gambar bukti pembayaran terlebih dahulu."); return; }
     setProofBusy(true); setProofError(""); setProofMessage("");
     try {
@@ -106,6 +113,7 @@ export function CheckoutView() {
       if (!response.ok) throw new Error(payload.error || "Gagal mengunggah bukti.");
       setProofMessage(payload.message || "Bukti berhasil dikirim.");
       setProofFile(null);
+      await refreshPaymentStatus(order.order_id);
     } catch (err) {
       setProofError(err instanceof Error ? err.message : "Gagal mengunggah bukti pembayaran.");
     } finally { setProofBusy(false); }
@@ -122,6 +130,7 @@ export function CheckoutView() {
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error || "Gagal membuat pesanan.");
       setOrder(payload.order);
+      await refreshPaymentStatus(payload.order.order_id);
       const instructionsResponse = await fetch(`/api/payments/instructions?method=${paymentMethod}`, { cache: "no-store" });
       if (instructionsResponse.ok) setPaymentInstructions(await instructionsResponse.json());
     } catch (err) {
