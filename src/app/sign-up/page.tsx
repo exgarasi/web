@@ -4,12 +4,13 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, ShieldCheck, UserRoundPlus } from "lucide-react";
-import { CurrencySwitcher } from "@/components/locale-provider";
+import { CurrencySwitcher, LanguageSwitcher, useLocale } from "@/components/locale-provider";
 import { signIn, signUp } from "@/lib/auth-client";
 
 export default function SignUpPage() {
   const router = useRouter();
-  const id = true;
+  const { locale } = useLocale();
+  const id = locale === "id";
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -61,7 +62,7 @@ export default function SignUpPage() {
         <p className="relative z-10 text-[10px] tracking-wider text-white/35">© {new Date().getFullYear()} EXGARASI</p>
       </section>
       <section className="flex min-h-screen flex-col px-5 py-6 sm:px-10 lg:px-14 xl:px-20">
-        <div className="flex items-center justify-between"><Link href="/" className="inline-flex items-center gap-2 text-[11px] font-semibold text-[#7b8794] hover:text-[#0099ff] lg:hidden"><ArrowLeft size={14}/> EXGARASI</Link><div className="ml-auto flex items-center gap-2"><CurrencySwitcher/></div></div>
+        <div className="flex items-center justify-between"><Link href="/" className="inline-flex items-center gap-2 text-[11px] font-semibold text-[#7b8794] hover:text-[#0099ff] lg:hidden"><ArrowLeft size={14}/> EXGARASI</Link><div className="ml-auto flex items-center gap-2"><LanguageSwitcher/><CurrencySwitcher/></div></div>
         <div className="mx-auto flex w-full max-w-[440px] flex-1 flex-col justify-center py-12">
           <Link href="/" className="hidden text-[11px] font-semibold text-[#8a94a3] transition hover:text-[#0099ff] lg:inline-flex"><ArrowLeft size={14} className="mr-2"/> {id ? "Kembali ke beranda" : "Back to home"}</Link>
           <p className="mt-8 text-[10px] font-bold tracking-[.25em] text-[#0099ff]">BUAT AKUN ANDA</p>
