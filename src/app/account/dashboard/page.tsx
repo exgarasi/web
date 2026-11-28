@@ -36,8 +36,8 @@ export default async function BuyerDashboard() {
           </Link>
           <Link href="/account/addresses" className="rounded-2xl border border-[#e1e7ee] bg-white p-5 shadow-sm transition hover:border-[#0099ff] hover:shadow-md">
             <p className="text-sm font-bold text-[#202733]">Buku alamat</p>
-            <p className="mt-1 text-xs leading-5 text-[#7b8794]">Pengelolaan alamat pengiriman akan segera tersedia.</p>
-            <span className="mt-4 inline-flex text-xs font-bold text-[#008fe8]">Segera tersedia</span>
+            <p className="mt-1 text-xs leading-5 text-[#7b8794]">Simpan dan kelola alamat pengiriman Anda.</p>
+            <span className="mt-4 inline-flex text-xs font-bold text-[#008fe8]">Kelola alamat →</span>
           </Link>
         </section>
         <section className="mt-6 overflow-hidden rounded-2xl border border-[#e1e7ee] bg-white shadow-sm">
