@@ -9,7 +9,7 @@ const MAX_ROWS = 500;
 const REQUIRED = ["title", "category", "sku", "condition", "price", "currency", "stock"] as const;
 const IMAGE_COLUMNS = ["image_1", "image_2", "image_3", "image_4", "image_5"] as const;
 const ALLOWED_COLUMNS = new Set([
-  "title", "description", "details", "category", "sku", "brand", "series",
+  "listing_id", "title", "description", "details", "category", "sku", "brand", "series",
   "model", "year", "condition", "price", "currency", "stock", ...IMAGE_COLUMNS,
 ]);
 
