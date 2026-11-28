@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { withAuthenticatedDb } from "@/lib/db-context";
+import { resolvePublicImageUrl } from "@/lib/image-url";
 
 export const runtime = "nodejs";
 
@@ -82,7 +83,7 @@ export async function GET() {
       where c.user_id=${appUserId}::uuid and c.status='active'
       order by ci.created_at desc
     `);
-    return NextResponse.json({ items });
+    return NextResponse.json({ items: items.map((item) => ({ ...item, image_url: resolvePublicImageUrl(item.image_key ? String(item.image_key) : null) })) });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Gagal memuat keranjang.";
     return NextResponse.json({ error: message }, { status: message === "UNAUTHENTICATED" ? 401 : 500 });
