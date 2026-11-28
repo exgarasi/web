@@ -1,7 +1,7 @@
 import { roleHasPermission, type AdminPermission } from "@/lib/admin-role-permissions";
 
 export type AdminUserForAccess = {
-  status: string;
+  status?: unknown;
   roles?: unknown;
 };
 
