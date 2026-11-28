@@ -36,7 +36,7 @@ export function OrderPaymentView({orderId}:{orderId:string}) {
     if(instructionsResponse.ok)setInstructions(await instructionsResponse.json());
   },[orderId,router]);
 
-  useEffect(()=>{void load().catch(e=>setError(e.message));},[load]);
+  useEffect(()=>{void Promise.resolve().then(load).catch(e=>setError(e.message));},[load]);
 
   async function upload(){
     if(!order||!file)return;
