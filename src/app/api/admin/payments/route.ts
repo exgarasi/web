@@ -16,17 +16,23 @@ export async function GET() {
         o.shipping_amount, o.shipping_confirmed_at,
         p.id as payment_id, p.payment_method, p.status as payment_status,
         u.full_name as buyer_name, u.email as buyer_email
-      from public.payment_proofs pp
-      join public.orders o on o.id=pp.order_id
-      join public.payments p on p.id=pp.payment_id
+      from public.orders o
+      join public.payments p on p.order_id=o.id
       join public.users u on u.id=o.buyer_user_id
-      where pp.status='pending'
-      order by pp.created_at asc
+      left join lateral (
+        select proof.id, proof.object_key, proof.mime_type, proof.file_size_bytes,
+          proof.created_at, proof.status
+        from public.payment_proofs proof
+        where proof.order_id=o.id and proof.status='pending'
+        order by proof.created_at desc limit 1
+      ) pp on true
+      where o.status='pending_payment' and p.status='pending'
+      order by o.placed_at asc
       limit 100
     `);
     const data = await Promise.all(rows.map(async (row) => ({
       ...row,
-      proof_url: await createPaymentProofSignedUrl(row.object_key, 300),
+      proof_url: row.object_key ? await createPaymentProofSignedUrl(row.object_key, 300) : null,
     })));
     return NextResponse.json({ payments: data }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
