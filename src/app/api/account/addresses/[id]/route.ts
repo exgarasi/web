@@ -29,6 +29,8 @@ export async function PATCH(request: Request, { params }: Context) {
   if (!v) return NextResponse.json({ error:"Periksa kembali data alamat." },{status:400});
   try {
     const address = await withAuthenticatedDb(async (tx) => {
+      const owned = await tx`select id from public.addresses where id=${id}::uuid and user_id=public.app_current_user_id() limit 1`;
+      if (!owned.length) return null;
       if(v.isDefault) await tx`update public.addresses set is_default=false where user_id=public.app_current_user_id()`;
       const rows = await tx`
         update public.addresses set recipient_name=${v.recipientName}, phone=${v.phone}, address_line=${v.addressLine},
