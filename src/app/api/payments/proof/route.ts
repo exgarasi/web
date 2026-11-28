@@ -12,6 +12,37 @@ function detectImage(bytes: Uint8Array): "image/jpeg" | "image/png" | "image/web
   return null;
 }
 
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const orderId = searchParams.get("orderId") || "";
+  const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  if (!uuid.test(orderId)) return NextResponse.json({ error: "Nomor pesanan tidak valid." }, { status: 400 });
+  try {
+    const order = await withAuthenticatedDb(async (tx, userId) => {
+      const rows = await tx`
+        select o.id as order_id, o.order_number, o.total_amount, o.shipping_amount,
+          o.shipping_confirmed_at, o.currency, o.status as order_status,
+          p.id as payment_id, p.payment_method, p.status as payment_status,
+          pp.status as proof_status, pp.review_note
+        from public.orders o
+        join public.payments p on p.order_id=o.id
+        left join lateral (
+          select status, review_note from public.payment_proofs
+          where order_id=o.id order by created_at desc limit 1
+        ) pp on true
+        where o.id=${orderId}::uuid and o.buyer_user_id=${userId}::uuid
+        limit 1
+      `;
+      return rows[0] ?? null;
+    });
+    if (!order) return NextResponse.json({ error: "Pesanan tidak ditemukan." }, { status: 404 });
+    return NextResponse.json({ order }, { headers: { "Cache-Control": "no-store" } });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+    return NextResponse.json({ error: "Gagal memuat status pembayaran." }, { status: message === "UNAUTHENTICATED" ? 401 : 500 });
+  }
+}
+
 export async function POST(request: Request) {
   const form = await request.formData().catch(() => null);
   const orderId = String(form?.get("orderId") ?? "");
