@@ -31,7 +31,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Application URL is not configured correctly." }, { status: 500 });
   }
 
-  let invitationId: string | null = null;
   try {
     const result = await withAuthenticatedDb(async (tx) => {
       const roles = await tx`select role from public.user_roles where user_id = public.app_current_user_id() and role in ('admin','super_admin')`;
@@ -45,7 +44,6 @@ export async function POST(request: Request) {
       `;
       return { invitationId: String(rows[0].id), expiresAt: String(rows[0].expires_at), rawToken };
     });
-    invitationId = result.invitationId;
     const acceptUrl = new URL("/seller/accept-invitation", invitationBaseUrl);
     acceptUrl.searchParams.set("token", result.rawToken);
 
