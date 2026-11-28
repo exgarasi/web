@@ -1,0 +1,117 @@
+"use client";
+
+import { createContext, useContext, useEffect, useState } from "react";
+
+export type Locale = "id" | "en";
+export type Currency = "IDR" | "USD";
+type LocaleContextValue = {
+  locale: Locale;
+  setLocale: (locale: Locale) => void;
+  toggleLocale: () => void;
+  currency: Currency;
+  setCurrency: (currency: Currency) => void;
+  formatPrice: (amountInIDR: number) => string;
+  exchangeRate: number | null;
+};
+const LocaleContext = createContext<LocaleContextValue | null>(null);
+
+export function LocaleProvider({ children }: { children: React.ReactNode }) {
+  const [locale, setLocaleState] = useState<Locale>("id");
+  const [currency, setCurrencyState] = useState<Currency>("IDR");
+  const [exchangeRate, setExchangeRate] = useState<number | null>(null);
+
+  useEffect(() => {
+    const savedLocale = window.localStorage.getItem("exgarasi-locale");
+    const savedCurrency = window.localStorage.getItem("exgarasi-currency");
+    // Restore browser preferences after hydration to avoid server/client markup mismatches.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (savedLocale === "id" || savedLocale === "en") setLocaleState(savedLocale);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (savedCurrency === "IDR" || savedCurrency === "USD") setCurrencyState(savedCurrency);
+
+    const controller = new AbortController();
+    fetch("https://open.er-api.com/v6/latest/IDR", { signal: controller.signal })
+      .then((response) => {
+        if (!response.ok) throw new Error("Exchange rate request failed");
+        return response.json();
+      })
+      .then((data: { result?: string; rates?: { USD?: number } }) => {
+        const rate = data.result === "success" ? data.rates?.USD : undefined;
+        if (typeof rate === "number" && Number.isFinite(rate) && rate > 0) setExchangeRate(rate);
+      })
+      .catch(() => undefined);
+    return () => controller.abort();
+  }, []);
+
+  const setLocale = (next: Locale) => {
+    setLocaleState(next);
+    window.localStorage.setItem("exgarasi-locale", next);
+  };
+  const setCurrency = (next: Currency) => {
+    setCurrencyState(next);
+    window.localStorage.setItem("exgarasi-currency", next);
+  };
+  const formatPrice = (amountInIDR: number) => {
+    if (currency === "USD") {
+      if (exchangeRate === null) return "USD —";
+      return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 2 }).format(amountInIDR * exchangeRate);
+    }
+    return new Intl.NumberFormat(locale === "id" ? "id-ID" : "en-US", {
+      style: "currency",
+      currency: "IDR",
+      maximumFractionDigits: 0,
+    }).format(amountInIDR);
+  };
+
+  const value: LocaleContextValue = {
+    locale,
+    setLocale,
+    toggleLocale: () => setLocale(locale === "id" ? "en" : "id"),
+    currency,
+    setCurrency,
+    formatPrice,
+    exchangeRate,
+  };
+
+  return <LocaleContext.Provider value={value}>{children}</LocaleContext.Provider>;
+}
+
+export function useLocale() {
+  const context = useContext(LocaleContext);
+  if (!context) throw new Error("useLocale must be used inside LocaleProvider");
+  return context;
+}
+
+export function LanguageSwitcher() {
+  const { locale, toggleLocale } = useLocale();
+  return (
+    <button
+      type="button"
+      onClick={toggleLocale}
+      aria-label={locale === "id" ? "Switch language to English" : "Ganti bahasa ke Indonesia"}
+      className="inline-flex min-h-10 items-center justify-center gap-2 whitespace-nowrap rounded-full border border-[#0099ff] bg-white px-4 py-2 text-[13px] font-semibold leading-none text-[#087fd0] transition hover:bg-[#f0f8ff]"
+    >
+      <span aria-hidden="true" className="text-[11px] font-medium tracking-wide opacity-75">{locale === "id" ? "ID" : "EN"}</span>
+      <span>{locale === "id" ? "Indonesia" : "English"}</span>
+    </button>
+  );
+}
+
+export function CurrencySwitcher() {
+  const { currency, setCurrency } = useLocale();
+  return (
+    <div className="inline-flex min-h-10 items-center gap-0.5 rounded-full border border-[#e1e7ee] bg-white p-1" aria-label="Pilih mata uang">
+      {(["IDR", "USD"] as const).map((item) => (
+        <button
+          key={item}
+          type="button"
+          onClick={() => setCurrency(item)}
+          aria-pressed={currency === item}
+          className={`inline-flex min-h-8 items-center justify-center whitespace-nowrap rounded-full px-3 text-[11px] font-bold leading-none transition ${currency === item ? "bg-[#111318] text-white" : "text-[#667085] hover:text-[#0099ff]"}`}
+        >
+          {item}
+        </button>
+      ))}
+    </div>
+  );
+}

@@ -1,0 +1,26 @@
+name: EXGARASI CI
+
+on:
+  push:
+    branches: [main, "feat/**"]
+  pull_request:
+    branches: [main, "feat/**"]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    env:
+      NODE_ENV: test
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      APP_BASE_URL: http://localhost:3000
+      DATABASE_URL: postgresql://ci:ci@127.0.0.1:5432/exgarasi
+      AUTH_SECRET: ci-only-secret-that-is-at-least-thirty-two-characters-long
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run build

@@ -1,0 +1,6 @@
+# Local Cloudflare Workers secrets (copy to .dev.vars; do not commit .dev.vars)
+AUTH_SECRET=replace-with-a-random-secret-at-least-32-characters
+APP_BASE_URL=http://localhost:3000
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+RESEND_API_KEY=
+EMAIL_FROM=

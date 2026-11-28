@@ -1,0 +1,27 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "exgarasi",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-11-18",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "upload_source_maps": true,
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      "id": "2dd24d3626a04be0a66a138b4e8bfdb3",
+      "remote": true
+    }
+  ],
+  "observability": {
+    "enabled": true
+  },
+  "vars": {
+    "EMAIL_FROM": "EXGARASI <noreply@exgarasi.id>"
+  }
+}
