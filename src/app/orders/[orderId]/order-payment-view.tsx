@@ -68,6 +68,7 @@ export function OrderPaymentView({orderId}:{orderId:string}) {
     <section className="rounded-3xl border border-[#e5eaf0] bg-white p-7">
       <h2 className="text-lg font-black">Pembayaran</h2>
       {order.payment_status==="paid"?<p className="mt-4 rounded-xl bg-emerald-50 p-4 text-sm font-semibold text-emerald-800">Pembayaran telah diverifikasi. Pesanan Anda sudah lunas.</p>
+      :order.order_status!=="pending_payment"?<p className="mt-4 rounded-xl bg-slate-50 p-4 text-sm text-slate-700">Pesanan ini tidak lagi menunggu pembayaran. Hubungi admin EXGARASI jika Anda memerlukan bantuan.</p>
       :order.proof_status==="pending"?<p className="mt-4 rounded-xl bg-amber-50 p-4 text-sm text-amber-900">Bukti pembayaran telah diterima dan sedang diperiksa admin EXGARASI.</p>
       :!order.shipping_confirmed_at?<p className="mt-4 rounded-xl bg-amber-50 p-4 text-sm leading-6 text-amber-900">Jangan melakukan pembayaran dahulu. Admin akan mengonfirmasi ongkos kirim dan total akhir. Tekan perbarui status setelah konfirmasi.</p>
       :<div className="mt-4 space-y-4">
