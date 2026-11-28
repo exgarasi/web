@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowUpRight, CarFront, LayoutDashboard, LogOut, Store } from "lucide-react";
+import { ArrowUpRight, CarFront, LayoutDashboard, LogOut, Store, ShoppingCart } from "lucide-react";
 import { signOut } from "@/lib/auth-client";
 import { CurrencySwitcher } from "@/components/locale-provider";
 
@@ -47,6 +47,7 @@ export function AccountHeader({ name, email, roles = [], active = "account" }: A
         </Link>
         <nav aria-label="Navigasi akun" className="order-3 flex w-full flex-wrap items-center gap-1 border-t border-[#edf0f4] pt-2 sm:order-2 sm:w-auto sm:border-0 sm:pt-0">
           <Link href="/catalog" className={navClass("marketplace")}><CarFront size={16} strokeWidth={2}/><span>Marketplace</span><ArrowUpRight size={12}/></Link>
+          <Link href="/cart" className={navClass("cart")}><ShoppingCart size={16} strokeWidth={2}/><span>Keranjang</span></Link>
           <Link href="/account/dashboard" aria-current={active === "account" ? "page" : undefined} className={navClass("account")}><LayoutDashboard size={16} strokeWidth={2}/><span>Akun saya</span></Link>
           {roles.includes("seller") && <Link href="/seller/dashboard" aria-current={active === "seller" ? "page" : undefined} className={navClass("seller")}><Store size={16} strokeWidth={2}/><span>Seller Center</span></Link>}
           {isAdmin && <Link href="/admin/dashboard" aria-current={active === "admin" ? "page" : undefined} className={navClass("admin")}><LayoutDashboard size={16} strokeWidth={2}/><span>Admin</span></Link>}
