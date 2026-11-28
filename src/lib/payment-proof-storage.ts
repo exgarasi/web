@@ -38,10 +38,10 @@ export async function uploadPaymentProof(objectKey: string, bytes: Uint8Array, m
 
 export async function deletePaymentProofObject(objectKey: string) {
   const { url, key } = getStorageConfig();
-  await fetch(`${url}/storage/v1/object`, {
+  await fetch(`${url}/storage/v1/object/payment-proofs`, {
     method: "DELETE",
     headers: { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ prefixes: [`payment-proofs/${objectKey}`] }),
+    body: JSON.stringify({ prefixes: [objectKey] }),
   });
 }
 
