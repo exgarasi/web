@@ -28,7 +28,7 @@ Draft implementation for PR #13. No database migration has been applied. The SQL
 - Existing Admin dashboard, catalog and seller-verification pages have server-side page guards.
 - Existing seller invitation and seller-verification GET/PATCH handlers have server-side API guards.
 - Seller verification remains Admin/Super Admin only; the current database review function and RLS enforce the same restriction.
-- GitHub Actions run #410 passed on commit `2966719`; additional access-resolution tests were then added and require a fresh CI run on the latest commit.
+- GitHub Actions run #416 passed on commit `d68c69c`: install, lint, typecheck, unit tests and Next.js build all succeeded. The subsequent seller-invitation response fix is being revalidated on the current head.
 
 ## Security boundaries and remaining work
 - Existing `app_is_admin()` remains limited to `admin` and `super_admin`; legacy broad RLS policies do not grant Finance or Moderator extra database access.
@@ -41,5 +41,5 @@ Draft implementation for PR #13. No database migration has been applied. The SQL
 
 
 ## Cloudflare build note
-- The repository's Cloudflare build trigger attempted a Preview build for this branch, but the build stopped after the OpenNext build succeeded because `wrangler preview` requires a `previews` block that is not present in the current Wrangler configuration.
-- The Preview build did not create a deployment. Do not add Preview configuration or create a Worker until separately approved.
+- Cloudflare build `cd888b25-27c9-40e2-bad4-2f2dc96e9238` for older commit `7d59baf` failed during Next.js TypeScript validation: the `Row` type returned by `getCurrentUser()` was incompatible with `AdminUserForAccess` because `status` was required. This was corrected in commit `7366795`; GitHub CI #416 subsequently passed the same typecheck and build stages on `d68c69c`.
+- That Cloudflare run stopped before the configured `wrangler preview` deploy command, so it did not create a deployment. A fresh Cloudflare build on the current commit still needs confirmation. No Preview configuration or Worker was changed.
