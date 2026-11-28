@@ -19,19 +19,19 @@ export default async function BuyerDashboard() {
       <AccountHeader name={user.full_name || "EXGARASI member"} email={user.email} roles={user.roles as string[]} active="account" />
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
         <div className="rounded-3xl border border-[#e5eaf0] bg-white p-6 shadow-sm sm:p-8">
-          <p className="text-[10px] font-bold tracking-[.24em] text-[#008fe8]">MY EXGARASI</p>
+          <p className="text-[10px] font-bold tracking-[.24em] text-[#008fe8]">AKUN EXGARASI</p>
           <div className="mt-2 flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
             <div>
-              <h1 className="text-3xl font-black tracking-tight text-[#111318]">My account</h1>
+              <h1 className="text-3xl font-black tracking-tight text-[#111318]">Akun saya</h1>
               <p className="mt-2 text-sm text-[#667085]">{user.full_name} <span className="px-1 text-[#c2cad4]">·</span> {user.email}</p>
             </div>
-            <span className="inline-flex w-fit items-center rounded-full border border-[#b9e3ff] bg-[#eff8ff] px-3 py-1.5 text-[11px] font-bold text-[#006fbd]">Buyer account</span>
+            <span className="inline-flex w-fit items-center rounded-full border border-[#b9e3ff] bg-[#eff8ff] px-3 py-1.5 text-[11px] font-bold text-[#006fbd]">Akun pembeli</span>
           </div>
         </div>
         <section className="mt-6 overflow-hidden rounded-2xl border border-[#e1e7ee] bg-white shadow-sm">
           <div className="flex items-center justify-between border-b border-[#e8edf2] px-6 py-5">
             <div>
-              <h2 className="font-bold text-[#202733]">Order history</h2>
+              <h2 className="font-bold text-[#202733]">Riwayat pesanan</h2>
               <p className="mt-1 text-xs text-[#7b8794]">Pantau pesanan yang Anda buat di EXGARASI.</p>
             </div>
           </div>

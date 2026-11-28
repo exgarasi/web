@@ -2,9 +2,12 @@ name: EXGARASI CI
 
 on:
   push:
-    branches: [main, "feat/**"]
-  pull_request:
-    branches: [main, "feat/**"]
+    branches: [main, "feat/**", "release/**", "fix/**"]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   validate:

@@ -20,13 +20,13 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const navigation = [
-  { label: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard, active: true },
+  { label: "Dasbor", href: "/admin/dashboard", icon: LayoutDashboard, active: true },
   { label: "Katalog produk", href: "/admin/catalog", icon: Package },
   { label: "Inventaris", icon: Boxes, soon: true },
   { label: "Penjualan", icon: ShoppingBag, soon: true },
   { label: "Pesanan", icon: ClipboardList, soon: true },
   { label: "Pelanggan", icon: Users, soon: true },
-  { label: "Partner seller", href: "/admin/seller-verifications", icon: Store },
+  { label: "Mitra penjual", href: "/admin/seller-verifications", icon: Store },
 ];
 
 function MetricCard({
@@ -143,9 +143,9 @@ export default async function AdminDashboard() {
           </div>
 
           <div className="mt-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            <MetricCard label="Partner seller" value={metrics.sellers} helper="Jumlah toko partner terdaftar" icon={Store} />
-            <MetricCard label="Product listings" value={metrics.listings} helper="Listing produk yang tercatat" icon={Package} />
-            <MetricCard label="Total orders" value={metrics.orders} helper="Pesanan yang tercatat di sistem" icon={ShoppingBag} />
+            <MetricCard label="Mitra penjual" value={metrics.sellers} helper="Jumlah toko partner terdaftar" icon={Store} />
+            <MetricCard label="Daftar produk" value={metrics.listings} helper="Listing produk yang tercatat" icon={Package} />
+            <MetricCard label="Total pesanan" value={metrics.orders} helper="Pesanan yang tercatat di sistem" icon={ShoppingBag} />
           </div>
 
           <div className="mt-7 grid gap-5 xl:grid-cols-[1.3fr_.7fr]">

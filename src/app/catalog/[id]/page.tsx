@@ -4,6 +4,7 @@ import { getDatabase } from "@/db";
 import { ProductDetail } from "../product-detail";
 import { getCurrentUser } from "@/lib/current-user";
 import { AccountHeader } from "@/components/account-header";
+import { resolvePublicImageUrl } from "@/lib/image-url";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -55,7 +56,7 @@ export default async function ProductPage({ params }: Props) {
         storeName: String(row.store_name),
         storeDescription: row.store_description ? String(row.store_description) : null,
         stock: Number(row.stock ?? 0),
-        images: imageRows.map((image) => ({ key: String(image.object_key), alt: image.alt_text ? String(image.alt_text) : null })),
+        images: imageRows.map((image) => ({ key: resolvePublicImageUrl(String(image.object_key)) ?? "", alt: image.alt_text ? String(image.alt_text) : null })),
         attributes: { ...(row.product_attributes as Record<string, unknown> ?? {}), ...(row.listing_attributes as Record<string, unknown> ?? {}) },
       };
     }
