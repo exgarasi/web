@@ -1,11 +1,15 @@
 import { createHash, randomBytes } from "node:crypto";
 import { NextResponse } from "next/server";
 import { withAuthenticatedDb } from "@/lib/db-context";
+import { getAdminAccess } from "@/lib/admin-permissions";
 import { sendSellerInvitationEmail } from "@/lib/auth";
 
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
+  const access = await getAdminAccess("sellers.invite");
+  if (!access) return NextResponse.json({ error: "Forbidden." }, { status: 403 });
+
   const body = await request.json().catch(() => null) as { email?: string } | null;
   const email = body?.email?.trim().toLowerCase();
   if (!email || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email))
