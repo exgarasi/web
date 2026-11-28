@@ -56,55 +56,63 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Ukuran bukti maksimal 5 MB." }, { status: 400 });
   }
 
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const mimeType = detectImage(bytes);
+  if (!mimeType) return NextResponse.json({ error: "File harus berupa gambar JPG, PNG, atau WebP yang valid." }, { status: 415 });
+  const extension = mimeType === "image/jpeg" ? "jpg" : mimeType === "image/png" ? "png" : "webp";
+  let objectKey = "";
+  let uploaded = false;
+
   try {
-    const authorization = await withAuthenticatedDb(async (tx, userId) => {
+    await withAuthenticatedDb(async (tx, userId) => {
+      // Keep the order/payment rows locked until the private object and proof
+      // record are committed. Admin shipping changes cannot race this upload.
       const rows = await tx`
-        select o.id, p.id as payment_id, o.shipping_confirmed_at,
-          o.total_amount, p.amount, p.status as payment_status, o.status as order_status
+        select o.id, o.shipping_confirmed_at, o.total_amount,
+          p.id as payment_id, p.amount, p.status as payment_status,
+          o.status as order_status
         from public.orders o
         join public.payments p on p.order_id=o.id
         where o.id=${orderId}::uuid and p.id=${paymentId}::uuid
           and o.buyer_user_id=${userId}::uuid
-        limit 1
+        for update of o, p
       `;
-      return { userId, order: rows[0] };
+      const order = rows[0];
+      if (!order) throw new Error("ORDER_NOT_FOUND");
+      if (order.order_status !== "pending_payment" || order.payment_status !== "pending") {
+        throw new Error("ORDER_NOT_PAYABLE");
+      }
+      if (!order.shipping_confirmed_at || Number(order.amount) !== Number(order.total_amount)) {
+        throw new Error("SHIPPING_NOT_CONFIRMED");
+      }
+
+      objectKey = `${userId}/${orderId}/${crypto.randomUUID()}.${extension}`;
+      await uploadPaymentProof(objectKey, bytes, mimeType);
+      uploaded = true;
+      await tx`
+        insert into public.payment_proofs
+          (payment_id, order_id, uploaded_by, object_key, mime_type, file_size_bytes)
+        values
+          (${paymentId}::uuid, ${orderId}::uuid, ${userId}::uuid, ${objectKey}, ${mimeType}, ${bytes.byteLength})
+      `;
     });
-    if (!authorization.order) return NextResponse.json({ error: "Pesanan tidak ditemukan." }, { status: 404 });
-    if (authorization.order.order_status !== "pending_payment" || authorization.order.payment_status !== "pending") {
-      return NextResponse.json({ error: "Pesanan ini tidak lagi menunggu pembayaran." }, { status: 409 });
-    }
-    if (!authorization.order.shipping_confirmed_at || Number(authorization.order.amount) !== Number(authorization.order.total_amount)) {
-      return NextResponse.json({ error: "Tunggu admin mengonfirmasi ongkos kirim dan total akhir sebelum mengunggah bukti pembayaran." }, { status: 409 });
-    }
-
-    const bytes = new Uint8Array(await file.arrayBuffer());
-    const mimeType = detectImage(bytes);
-    if (!mimeType) return NextResponse.json({ error: "File harus berupa gambar JPG, PNG, atau WebP yang valid." }, { status: 415 });
-    const extension = mimeType === "image/jpeg" ? "jpg" : mimeType === "image/png" ? "png" : "webp";
-    const objectKey = `${authorization.userId}/${orderId}/${crypto.randomUUID()}.${extension}`;
-
-    await uploadPaymentProof(objectKey, bytes, mimeType);
-    try {
-      await withAuthenticatedDb(async (tx, userId) => {
-        await tx`
-          insert into public.payment_proofs
-            (payment_id, order_id, uploaded_by, object_key, mime_type, file_size_bytes)
-          values
-            (${paymentId}::uuid, ${orderId}::uuid, ${userId}::uuid, ${objectKey}, ${mimeType}, ${bytes.byteLength})
-        `;
-      });
-    } catch (error) {
-      await deletePaymentProofObject(objectKey).catch(() => undefined);
-      throw error;
-    }
 
     return NextResponse.json({ success: true, message: "Bukti pembayaran berhasil dikirim dan menunggu verifikasi admin." }, { status: 201 });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Gagal mengunggah bukti pembayaran.";
-    if (message === "UNAUTHENTICATED") return NextResponse.json({ error: "Silakan masuk terlebih dahulu." }, { status: 401 });
-    if (message === "PAYMENT_PROOF_STORAGE_NOT_CONFIGURED") return NextResponse.json({ error: "Penyimpanan bukti pembayaran belum dikonfigurasi oleh admin." }, { status: 503 });
-    if (message.includes("payment_proofs_one_pending_per_order") || message.includes("duplicate key")) return NextResponse.json({ error: "Bukti pembayaran sebelumnya masih menunggu pemeriksaan." }, { status: 409 });
-    console.error("[payment-proof] Submission failed", error);
-    return NextResponse.json({ error: "Terjadi kesalahan saat mengirim bukti pembayaran." }, { status: 500 });
+    if (uploaded && objectKey) await deletePaymentProofObject(objectKey).catch(() => undefined);
+    const message = error instanceof Error ? error.message : "";
+    const known: Record<string, { status: number; error: string }> = {
+      UNAUTHENTICATED: { status: 401, error: "Silakan masuk terlebih dahulu." },
+      ORDER_NOT_FOUND: { status: 404, error: "Pesanan tidak ditemukan." },
+      ORDER_NOT_PAYABLE: { status: 409, error: "Pesanan ini tidak lagi menunggu pembayaran." },
+      SHIPPING_NOT_CONFIRMED: { status: 409, error: "Tunggu admin mengonfirmasi ongkos kirim dan total akhir sebelum mengunggah bukti." },
+      PAYMENT_PROOF_STORAGE_NOT_CONFIGURED: { status: 503, error: "Penyimpanan bukti pembayaran belum dikonfigurasi oleh admin." },
+    };
+    if (message.includes("payment_proofs_one_pending_per_order") || message.includes("duplicate key")) {
+      return NextResponse.json({ error: "Bukti pembayaran sebelumnya masih menunggu pemeriksaan." }, { status: 409 });
+    }
+    const result = known[message] ?? { status: 500, error: "Terjadi kesalahan saat mengirim bukti pembayaran." };
+    console.error("[payment-proof] Submission failed", message);
+    return NextResponse.json({ error: result.error }, { status: result.status });
   }
 }
