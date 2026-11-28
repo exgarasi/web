@@ -129,10 +129,7 @@ export function CheckoutView() {
       });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error || "Gagal membuat pesanan.");
-      setOrder(payload.order);
-      await refreshPaymentStatus(payload.order.order_id);
-      const instructionsResponse = await fetch(`/api/payments/instructions?method=${paymentMethod}`, { cache: "no-store" });
-      if (instructionsResponse.ok) setPaymentInstructions(await instructionsResponse.json());
+      router.push("/orders/" + payload.order.order_id);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Gagal membuat pesanan.");
     } finally { setBusy(false); }
