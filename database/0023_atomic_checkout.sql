@@ -7,7 +7,7 @@ RETURNS integer
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public, pg_temp
-AS $
+AS $function$
 DECLARE
   v_order_ids uuid[];
   v_released integer;
@@ -47,7 +47,7 @@ BEGIN
 
   RETURN coalesce(v_released, 0);
 END;
-$;
+$function$;
 
 REVOKE ALL ON FUNCTION public.release_expired_stock_reservations() FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.release_expired_stock_reservations() TO exgarasi_app;
