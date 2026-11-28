@@ -85,7 +85,7 @@ export function CheckoutView() {
     try {
       const response = await fetch("/api/checkout", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ addressId, paymentMethod, idempotencyKey: crypto.randomUUID() }),
+        body: JSON.stringify({ addressId, paymentMethod, idempotencyKey: idempotencyKey.current || (idempotencyKey.current = crypto.randomUUID()) }),
       });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error || "Gagal membuat pesanan.");
