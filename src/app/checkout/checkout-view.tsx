@@ -60,7 +60,7 @@ export function CheckoutView() {
     }
   }, [router]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => { void Promise.resolve().then(load); }, [load]);
 
   async function saveAddress() {
     setBusy(true); setError("");
