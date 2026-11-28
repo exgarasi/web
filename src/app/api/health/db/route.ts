@@ -8,13 +8,25 @@ export async function GET() {
 
   try {
     database = await getDatabase();
-    const result = await database.sql`select 1 as ok`;
+    const result = await database.sql`select current_user as role`;
+    const leastPrivilegeRoleActive = result[0]?.role === "exgarasi_app";
+
+    if (!leastPrivilegeRoleActive) {
+      return Response.json(
+        {
+          status: "error",
+          database: "connected",
+          security: "runtime_role_mismatch",
+        },
+        { status: 503 },
+      );
+    }
 
     return Response.json({
       status: "ok",
       database: "connected",
       provider: "postgresql",
-      query: result[0]?.ok === 1,
+      security: "least_privilege_role_active",
     });
   } catch {
     return Response.json(

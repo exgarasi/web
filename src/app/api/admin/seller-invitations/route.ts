@@ -16,7 +16,7 @@ export const POST = createAdminRoute("sellers.invite", getAdminAccess, async (re
 
   const configuredBaseUrl = process.env.APP_BASE_URL || process.env.NEXT_PUBLIC_APP_URL;
   if (!configuredBaseUrl) {
-    return NextResponse.json({ error: "APP_BASE_URL must point to the current Preview environment." }, { status: 500 });
+    return NextResponse.json({ error: "APP_BASE_URL or NEXT_PUBLIC_APP_URL must point to the active EXGARASI development website." }, { status: 500 });
   }
   let invitationBaseUrl: URL;
   try {
