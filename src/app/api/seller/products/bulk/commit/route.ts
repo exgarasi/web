@@ -37,30 +37,35 @@ function isSafePublicHttpsUrl(value: string) {
 
 async function uploadImages(bucket: MediaBucket, storeId: string, data: CsvData) {
   const keys: string[] = [];
-  for (const field of IMAGE_FIELDS) {
-    const source = (data[field] ?? "").trim();
-    if (!source) continue;
-    if (!isSafePublicHttpsUrl(source)) throw new Error("INVALID_IMAGE_URL");
+  try {
+    for (const field of IMAGE_FIELDS) {
+      const source = (data[field] ?? "").trim();
+      if (!source) continue;
+      if (!isSafePublicHttpsUrl(source)) throw new Error("INVALID_IMAGE_URL");
 
-    // Do not follow redirects: a public URL must not redirect the Worker to a private host.
-    const response = await fetch(source, { redirect: "manual", signal: AbortSignal.timeout(12_000) });
-    if (response.status >= 300 && response.status < 400) throw new Error("IMAGE_REDIRECT_NOT_ALLOWED");
-    if (!response.ok) throw new Error("IMAGE_FETCH_FAILED");
+      // Do not follow redirects: a public URL must not redirect the Worker to a private host.
+      const response = await fetch(source, { redirect: "manual", signal: AbortSignal.timeout(12_000) });
+      if (response.status >= 300 && response.status < 400) throw new Error("IMAGE_REDIRECT_NOT_ALLOWED");
+      if (!response.ok) throw new Error("IMAGE_FETCH_FAILED");
 
-    const mime = (response.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase();
-    const extension = MIME_EXT[mime];
-    if (!extension) throw new Error("UNSUPPORTED_IMAGE_TYPE");
+      const mime = (response.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase();
+      const extension = MIME_EXT[mime];
+      if (!extension) throw new Error("UNSUPPORTED_IMAGE_TYPE");
 
-    const declaredLength = Number(response.headers.get("content-length") ?? 0);
-    if (declaredLength > MAX_IMAGE_BYTES) throw new Error("IMAGE_TOO_LARGE");
-    const bytes = await response.arrayBuffer();
-    if (bytes.byteLength < 1 || bytes.byteLength > MAX_IMAGE_BYTES) throw new Error("IMAGE_TOO_LARGE");
+      const declaredLength = Number(response.headers.get("content-length") ?? 0);
+      if (declaredLength > MAX_IMAGE_BYTES) throw new Error("IMAGE_TOO_LARGE");
+      const bytes = await response.arrayBuffer();
+      if (bytes.byteLength < 1 || bytes.byteLength > MAX_IMAGE_BYTES) throw new Error("IMAGE_TOO_LARGE");
 
-    const key = `seller-media/${storeId}/${crypto.randomUUID()}.${extension}`;
-    await bucket.put(key, bytes, { httpMetadata: { contentType: mime } });
-    keys.push(key);
+      const key = `seller-media/${storeId}/${crypto.randomUUID()}.${extension}`;
+      await bucket.put(key, bytes, { httpMetadata: { contentType: mime } });
+      keys.push(key);
+    }
+    return keys;
+  } catch (error) {
+    if (keys.length) await bucket.delete(keys).catch(() => undefined);
+    throw error;
   }
-  return keys;
 }
 
 export async function POST(request: Request) {
