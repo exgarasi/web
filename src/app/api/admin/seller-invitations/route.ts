@@ -15,13 +15,15 @@ export const POST = createAdminRoute("sellers.invite", getAdminAccess, async (re
     return NextResponse.json({ error: "A valid seller email is required." }, { status: 400 });
 
   const configuredBaseUrl = process.env.APP_BASE_URL || process.env.NEXT_PUBLIC_APP_URL;
-  if (!configuredBaseUrl) {
-    return NextResponse.json({ error: "APP_BASE_URL or NEXT_PUBLIC_APP_URL must point to the active EXGARASI development website." }, { status: 500 });
-  }
   let invitationBaseUrl: URL;
   try {
-    invitationBaseUrl = new URL(configuredBaseUrl);
-    if (invitationBaseUrl.protocol !== "https:" || invitationBaseUrl.username || invitationBaseUrl.password)
+    // If no explicit base URL is configured, derive it only from a trusted EXGARASI host.
+    invitationBaseUrl = new URL(configuredBaseUrl || request.url);
+    const host = invitationBaseUrl.hostname.toLowerCase();
+    const trustedHost = host === "exgarasi.id" || host === "www.exgarasi.id"
+      || host.endsWith(".exgarasi-id.workers.dev") || host === "localhost";
+    const secureTransport = invitationBaseUrl.protocol === "https:" || (host === "localhost" && invitationBaseUrl.protocol === "http:");
+    if (!trustedHost || !secureTransport || invitationBaseUrl.username || invitationBaseUrl.password)
       throw new Error("Invalid application URL");
     invitationBaseUrl.pathname = "/";
     invitationBaseUrl.search = "";
@@ -34,6 +36,7 @@ export const POST = createAdminRoute("sellers.invite", getAdminAccess, async (re
     const result = await withAuthenticatedDb(async (tx) => {
       const roles = await tx`select role from public.user_roles where user_id = public.app_current_user_id() and role in ('admin','super_admin')`;
       if (!roles.length) throw new Error("FORBIDDEN");
+      await tx`update public.seller_invitations set status='revoked' where lower(email)=${email} and status='pending'`;
       const rawToken = randomBytes(32).toString("base64url");
       const tokenHash = createHash("sha256").update(rawToken).digest("hex");
       const rows = await tx`
