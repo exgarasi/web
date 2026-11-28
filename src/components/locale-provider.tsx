@@ -21,11 +21,9 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
   const [exchangeRate, setExchangeRate] = useState<number | null>(null);
 
   useEffect(() => {
-    const savedLocale = window.localStorage.getItem("exgarasi-locale");
     const savedCurrency = window.localStorage.getItem("exgarasi-currency");
     // Restore browser preferences after hydration to avoid server/client markup mismatches.
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (savedLocale === "id" || savedLocale === "en") setLocaleState(savedLocale);
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (savedCurrency === "IDR" || savedCurrency === "USD") setCurrencyState(savedCurrency);
 
@@ -44,8 +42,8 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const setLocale = (next: Locale) => {
-    setLocaleState(next);
-    window.localStorage.setItem("exgarasi-locale", next);
+    setLocaleState("id");
+    window.localStorage.removeItem("exgarasi-locale");
   };
   const setCurrency = (next: Currency) => {
     setCurrencyState(next);
@@ -83,18 +81,7 @@ export function useLocale() {
 }
 
 export function LanguageSwitcher() {
-  const { locale, toggleLocale } = useLocale();
-  return (
-    <button
-      type="button"
-      onClick={toggleLocale}
-      aria-label={locale === "id" ? "Switch language to English" : "Ganti bahasa ke Indonesia"}
-      className="inline-flex min-h-10 items-center justify-center gap-2 whitespace-nowrap rounded-full border border-[#0099ff] bg-white px-4 py-2 text-[13px] font-semibold leading-none text-[#087fd0] transition hover:bg-[#f0f8ff]"
-    >
-      <span aria-hidden="true" className="text-[11px] font-medium tracking-wide opacity-75">{locale === "id" ? "ID" : "EN"}</span>
-      <span>{locale === "id" ? "Indonesia" : "English"}</span>
-    </button>
-  );
+  return null;
 }
 
 export function CurrencySwitcher() {
