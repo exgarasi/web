@@ -18,8 +18,8 @@ export async function GET() {
     if (!profile) return NextResponse.json({ error: "Profil tidak ditemukan." }, { status: 404 });
     return NextResponse.json({ profile });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Gagal memuat profil.";
-    return NextResponse.json({ error: message }, { status: message === "UNAUTHENTICATED" ? 401 : 500 });
+    const unauthenticated = error instanceof Error && error.message === "UNAUTHENTICATED";
+    return NextResponse.json({ error: unauthenticated ? "Silakan masuk kembali." : "Gagal memuat profil." }, { status: unauthenticated ? 401 : 500 });
   }
 }
 
@@ -45,7 +45,7 @@ export async function PATCH(request: Request) {
     if (!updated) return NextResponse.json({ error: "Profil tidak ditemukan." }, { status: 404 });
     return NextResponse.json({ profile: updated });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Gagal menyimpan profil.";
-    return NextResponse.json({ error: message }, { status: message === "UNAUTHENTICATED" ? 401 : 500 });
+    const unauthenticated = error instanceof Error && error.message === "UNAUTHENTICATED";
+    return NextResponse.json({ error: unauthenticated ? "Silakan masuk kembali." : "Gagal menyimpan profil." }, { status: unauthenticated ? 401 : 500 });
   }
 }
