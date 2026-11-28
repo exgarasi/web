@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, ArrowUpRight, CarFront, Search, ShieldCheck, Sparkles, Store, Tag } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ArrowRight, ArrowUpRight, CarFront, Search, ShieldCheck, Sparkles, Store, Tag, LogOut, LayoutDashboard } from "lucide-react";
 import { useLocale, LanguageSwitcher, CurrencySwitcher } from "@/components/locale-provider";
+import { signOut, useSession } from "@/lib/auth-client";
 
 const copy = {
   id: {
@@ -74,7 +76,16 @@ const categories = [
 
 export default function HomePage() {
   const { locale } = useLocale();
+  const { data: session, isPending } = useSession();
+  const router = useRouter();
   const t = copy[locale];
+
+  async function handleHomeSignOut() {
+    const result = await signOut();
+    if (result.error) return;
+    router.replace("/");
+    router.refresh();
+  }
   return (
     <main className="min-h-screen overflow-hidden bg-white text-[#111318]">
       <div className="border-b border-[#e9edf2] bg-[#f7f9fc]">
@@ -99,8 +110,7 @@ export default function HomePage() {
           <div className="flex items-center gap-2 sm:gap-3">
             <div className="hidden sm:block"><LanguageSwitcher /></div>
             <div className="hidden md:block"><CurrencySwitcher /></div>
-            <Link href="/sign-in" className="hidden min-h-10 items-center justify-center whitespace-nowrap rounded-full px-4 py-2.5 text-[12px] font-bold leading-none text-[#4b5563] transition hover:bg-[#f3f6fa] sm:inline-flex">{t.signIn}</Link>
-            <Link href="/sign-up" className="inline-flex items-center gap-2 rounded-full bg-[#111318] px-5 py-3 text-[12px] font-bold text-white transition hover:bg-[#0099ff]">{t.register}<ArrowUpRight size={14}/></Link>
+            {isPending ? <span className="h-10 w-24" aria-hidden="true" /> : session?.user ? <><Link href="/account/dashboard" className="inline-flex min-h-10 items-center gap-2 whitespace-nowrap rounded-full px-4 py-2.5 text-[12px] font-bold text-[#202733] transition hover:bg-[#f3f6fa]"><LayoutDashboard size={15}/><span>{locale === "id" ? "Akun saya" : "My account"}</span></Link><button type="button" onClick={handleHomeSignOut} className="inline-flex min-h-10 items-center gap-2 whitespace-nowrap rounded-full border border-[#dce2e9] px-4 py-2.5 text-[12px] font-bold text-[#596273] transition hover:border-[#e5484d] hover:bg-[#fff5f5] hover:text-[#b42318]"><LogOut size={15}/><span>Logout</span></button></> : <><Link href="/sign-in" className="hidden min-h-10 items-center justify-center whitespace-nowrap rounded-full px-4 py-2.5 text-[12px] font-bold leading-none text-[#4b5563] transition hover:bg-[#f3f6fa] sm:inline-flex">{t.signIn}</Link><Link href="/sign-up" className="inline-flex items-center gap-2 rounded-full bg-[#111318] px-5 py-3 text-[12px] font-bold text-white transition hover:bg-[#0099ff]">{t.register}<ArrowUpRight size={14}/></Link></>}
           </div>
         </div>
       </header>
