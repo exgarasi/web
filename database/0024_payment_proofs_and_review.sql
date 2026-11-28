@@ -56,6 +56,10 @@ CREATE POLICY payment_proofs_admin_update ON public.payment_proofs
   WITH CHECK (public.app_is_admin());
 
 GRANT SELECT, INSERT, UPDATE ON public.payment_proofs TO exgarasi_app;
+GRANT INSERT ON public.audit_logs TO exgarasi_app;
+DROP POLICY IF EXISTS audit_logs_admin_insert ON public.audit_logs;
+CREATE POLICY audit_logs_admin_insert ON public.audit_logs
+  FOR INSERT WITH CHECK (public.app_is_admin());
 
 -- The bucket is private. All file operations are proxied by server routes that
 -- keep the service-role key server-side; no public object URLs are issued.
