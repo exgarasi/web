@@ -60,7 +60,9 @@ export default async function AdminDashboard() {
   const user = await getCurrentUser();
   if (!user) redirect("/sign-in");
   const roles = user.roles as string[];
-  if (!roles.includes("admin") && !roles.includes("super_admin")) redirect("/");
+  const adminRoles = ["super_admin", "admin", "finance", "moderator"];
+  const activeAdminRole = adminRoles.find((role) => roles.includes(role));
+  if (!activeAdminRole) redirect("/");
 
   const metrics = await withAuthenticatedDb(async (tx) => {
     const [sellers, listings, orders] = await Promise.all([
@@ -129,7 +131,7 @@ export default async function AdminDashboard() {
             <p className="text-xs text-gray-400">EXGARASI / Admin</p>
             <p className="mt-0.5 text-sm font-semibold">Dashboard overview</p>
           </div>
-          <span className="rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1.5 text-[11px] font-semibold text-emerald-700">System online</span>
+          <div className="flex items-center gap-2"><span className="rounded-full border border-sky-100 bg-sky-50 px-3 py-1.5 text-[11px] font-semibold capitalize text-sky-700">{activeAdminRole?.replace("_", " ")}</span><span className="rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1.5 text-[11px] font-semibold text-emerald-700">System online</span></div>
         </header>
 
         <div className="mx-auto max-w-7xl px-5 py-8 sm:px-8">
@@ -138,6 +140,7 @@ export default async function AdminDashboard() {
               <p className="text-xs font-bold uppercase tracking-[.2em] text-[#0099ff]">Overview</p>
               <h1 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">Selamat datang, {user.full_name || "Admin"}</h1>
               <p className="mt-2 text-sm text-gray-500">Pantau ekosistem EXGARASI dari satu tempat.</p>
+              <p className="mt-3 inline-flex rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600">Hak akses aktif: <span className="ml-1 font-semibold capitalize text-gray-900">{activeAdminRole?.replace("_", " ")}</span></p>
             </div>
             <div className="flex items-center gap-2 text-xs text-gray-400"><Activity size={15} /> Data langsung dari database</div>
           </div>
