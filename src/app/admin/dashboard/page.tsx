@@ -12,6 +12,7 @@ import {
   Users,
 } from "lucide-react";
 import { getAdminAccess } from "@/lib/admin-permissions";
+import { roleHasPermission } from "@/lib/admin-role-permissions";
 import { withAuthenticatedDb } from "@/lib/db-context";
 import { SellerInviteForm } from "./invite-form";
 import { AccountHeader } from "@/components/account-header";
@@ -60,12 +61,17 @@ export default async function AdminDashboard() {
   const access = await getAdminAccess("dashboard.read");
   if (!access) redirect("/");
   const { user, roles, activeRole: activeAdminRole } = access;
+  const canReadSellers = roles.some((role) => roleHasPermission(role, "sellers.read"));
+  const canReadCatalog = roles.some((role) => roleHasPermission(role, "catalog.read"));
+  const canReadOrders = roles.some((role) => roleHasPermission(role, "orders.read"));
+  const canInviteSellers = roles.some((role) => roleHasPermission(role, "sellers.invite"));
+  const canAdminSellers = roles.some((role) => roleHasPermission(role, "sellers.admin"));
 
   const metrics = await withAuthenticatedDb(async (tx) => {
     const [sellers, listings, orders] = await Promise.all([
-      tx`select count(*)::int as count from public.stores where store_type = 'partner'`,
-      tx`select count(*)::int as count from public.listings`,
-      tx`select count(*)::int as count from public.orders`,
+      canReadSellers ? tx\`select count(*)::int as count from public.stores where store_type = 'partner'\` : Promise.resolve([]),
+      canReadCatalog ? tx\`select count(*)::int as count from public.listings\` : Promise.resolve([]),
+      canReadOrders ? tx\`select count(*)::int as count from public.orders\` : Promise.resolve([]),
     ]);
     return {
       sellers: Number(sellers[0]?.count ?? 0),
@@ -73,6 +79,11 @@ export default async function AdminDashboard() {
       orders: Number(orders[0]?.count ?? 0),
     };
   });
+  const visibleNavigation = navigation.filter((item) =>
+    item.active
+    || (item.href === "/admin/catalog" && canReadCatalog)
+    || (item.href === "/admin/seller-verifications" && canAdminSellers),
+  );
 
   return (
     <>
@@ -89,7 +100,7 @@ export default async function AdminDashboard() {
         <div className="px-4 py-5">
           <p className="mb-3 px-3 text-[10px] font-bold uppercase tracking-[.18em] text-gray-400">Workspace</p>
           <nav className="grid grid-cols-2 gap-1 lg:grid-cols-1">
-            {navigation.map((item) => {
+            {visibleNavigation.map((item) => {
               const Icon = item.icon;
               return item.active ? (
                 <a key={item.label} href={item.href} className="flex items-center gap-3 rounded-xl bg-sky-50 px-3 py-2.5 text-sm font-semibold text-[#0088e6]">
@@ -143,9 +154,9 @@ export default async function AdminDashboard() {
           </div>
 
           <div className="mt-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            <MetricCard label="Mitra penjual" value={metrics.sellers} helper="Jumlah toko partner terdaftar" icon={Store} />
-            <MetricCard label="Daftar produk" value={metrics.listings} helper="Listing produk yang tercatat" icon={Package} />
-            <MetricCard label="Total pesanan" value={metrics.orders} helper="Pesanan yang tercatat di sistem" icon={ShoppingBag} />
+            {canReadSellers && <MetricCard label="Mitra penjual" value={metrics.sellers} helper="Jumlah toko partner terdaftar" icon={Store} />}
+            {canReadCatalog && <MetricCard label="Daftar produk" value={metrics.listings} helper="Listing produk yang tercatat" icon={Package} />}
+            {canReadOrders && <MetricCard label="Total pesanan" value={metrics.orders} helper="Pesanan yang tercatat di sistem" icon={ShoppingBag} />}
           </div>
 
           <div className="mt-7 grid gap-5 xl:grid-cols-[1.3fr_.7fr]">
@@ -176,7 +187,7 @@ export default async function AdminDashboard() {
               </div>
             </section>
 
-            <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm shadow-gray-100/70 sm:p-6">
+            {canInviteSellers && <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm shadow-gray-100/70 sm:p-6">
               <div className="flex items-center gap-2">
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-50 text-[#0099ff]"><Store size={18} /></div>
                 <div>
@@ -189,7 +200,7 @@ export default async function AdminDashboard() {
               <div className="mt-5 flex items-center gap-2 border-t border-gray-100 pt-4 text-[11px] text-gray-400">
                 <ArrowUpRight size={13} /> Persetujuan seller tetap melalui admin
               </div>
-            </section>
+            </section>}
           </div>
 
           <footer className="mt-8 flex flex-col gap-1 border-t border-gray-200 py-5 text-[11px] text-gray-400 sm:flex-row sm:items-center sm:justify-between">
