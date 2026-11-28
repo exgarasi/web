@@ -12,7 +12,7 @@ export async function POST(request: Request) {
 
   const body = await request.json().catch(() => null) as { email?: string } | null;
   const email = body?.email?.trim().toLowerCase();
-  if (!email || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email))
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
     return NextResponse.json({ error: "A valid seller email is required." }, { status: 400 });
 
   const configuredBaseUrl = process.env.APP_BASE_URL || process.env.NEXT_PUBLIC_APP_URL;
