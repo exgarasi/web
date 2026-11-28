@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useLocale } from "@/components/locale-provider";
 
 type Product = {
@@ -14,8 +16,34 @@ type Product = {
 
 export function ProductDetail({ product }: { product: Product }) {
   const { locale, currency, formatPrice } = useLocale();
-  const id = locale === "id";
+  const router = useRouter();
+  const [adding, setAdding] = useState(false);
+  const [cartMessage, setCartMessage] = useState("");
+  const id = true;
   const imageUrls = product.images.filter((image) => /^https?:\/\//i.test(image.key));
+  async function addToCart() {
+    setAdding(true);
+    setCartMessage("");
+    try {
+      const response = await fetch("/api/cart/items", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ listingId: product.id, quantity: 1 }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (response.status === 401) {
+        router.push(`/sign-in?callbackURL=${encodeURIComponent(`/catalog/${product.id}`)}`);
+        return;
+      }
+      if (!response.ok) throw new Error(data.error || "Gagal menambahkan produk ke keranjang.");
+      setCartMessage("Produk berhasil ditambahkan ke keranjang.");
+    } catch (error) {
+      setCartMessage(error instanceof Error ? error.message : "Terjadi kesalahan. Silakan coba lagi.");
+    } finally {
+      setAdding(false);
+    }
+  }
+
   const price = product.currency === "IDR"
     ? formatPrice(product.priceAmount)
     : new Intl.NumberFormat(currency === "USD" ? "en-US" : "id-ID", { style: "currency", currency: product.currency, maximumFractionDigits: 0 }).format(product.priceAmount);
@@ -51,7 +79,11 @@ export function ProductDetail({ product }: { product: Product }) {
         </div>
         <h2 className="mt-8 text-sm font-bold">{id ? "Deskripsi produk" : "Product description"}</h2>
         <p className="mt-2 whitespace-pre-wrap text-sm leading-7 text-gray-600">{product.description || (id ? "Belum ada deskripsi produk." : "No product description yet.")}</p>
-        <Link href="/catalog" className="mt-8 inline-flex w-fit rounded-full bg-gray-950 px-6 py-3 text-sm font-semibold text-white hover:bg-sky-600">{id ? "Jelajahi produk lainnya" : "Explore more products"}</Link>
+        <div className="mt-8 flex flex-wrap gap-3">
+          <button type="button" onClick={addToCart} disabled={adding || product.stock < 1} className="inline-flex min-h-12 items-center justify-center rounded-full bg-[#168cf0] px-7 py-3 text-sm font-bold text-white transition hover:bg-[#006fc7] disabled:cursor-not-allowed disabled:bg-gray-300">{adding ? "Menambahkan..." : product.stock < 1 ? "Stok habis" : "Tambah ke keranjang"}</button>
+          <Link href="/catalog" className="inline-flex min-h-12 w-fit items-center rounded-full border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-800 hover:border-sky-500 hover:text-sky-600">Jelajahi produk lainnya</Link>
+        </div>
+        {cartMessage ? <p role="status" aria-live="polite" className="mt-3 text-sm text-gray-600">{cartMessage}</p> : null}
       </div>
     </section>
   );
