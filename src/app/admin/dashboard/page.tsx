@@ -26,6 +26,7 @@ const navigation = [
   { label: "Inventaris", icon: Boxes, soon: true },
   { label: "Penjualan", icon: ShoppingBag, soon: true },
   { label: "Pesanan", icon: ClipboardList, soon: true },
+  { label: "Verifikasi pembayaran", href: "/admin/payments", icon: Activity },
   { label: "Pelanggan", icon: Users, soon: true },
   { label: "Mitra penjual", href: "/admin/seller-verifications", icon: Store },
 ];
@@ -66,6 +67,7 @@ export default async function AdminDashboard() {
   const canReadOrders = roles.some((role) => roleHasPermission(role, "orders.read"));
   const canInviteSellers = roles.some((role) => roleHasPermission(role, "sellers.invite"));
   const canAdminSellers = roles.some((role) => roleHasPermission(role, "sellers.admin"));
+  const canVerifyPayments = roles.some((role) => roleHasPermission(role, "payments.verify"));
 
   const metrics = await withAuthenticatedDb(async (tx) => {
     const [sellers, listings, orders] = await Promise.all([
@@ -82,7 +84,8 @@ export default async function AdminDashboard() {
   const visibleNavigation = navigation.filter((item) =>
     item.active
     || (item.href === "/admin/catalog" && canReadCatalog)
-    || (item.href === "/admin/seller-verifications" && canAdminSellers),
+    || (item.href === "/admin/seller-verifications" && canAdminSellers)
+    || (item.href === "/admin/payments" && canVerifyPayments),
   );
 
   return (
