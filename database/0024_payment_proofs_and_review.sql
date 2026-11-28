@@ -63,3 +63,53 @@ ON CONFLICT (id) DO UPDATE SET
   public=false,
   file_size_limit=5242880,
   allowed_mime_types=ARRAY['image/jpeg','image/png','image/webp'];
+
+-- Seller sub-orders must not appear ready for fulfillment before payment.
+ALTER TYPE public.sub_order_status ADD VALUE IF NOT EXISTS 'pending_payment';
+
+CREATE OR REPLACE FUNCTION public.mark_new_sub_order_pending_payment()
+RETURNS trigger
+LANGUAGE plpgsql
+SET search_path = public, pg_temp
+AS $function$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM public.orders
+    WHERE id = NEW.order_id AND status = 'pending_payment'
+  ) THEN
+    NEW.status := 'pending_payment';
+  END IF;
+  RETURN NEW;
+END;
+$function$;
+
+DROP TRIGGER IF EXISTS sub_orders_pending_payment_guard ON public.sub_orders;
+CREATE TRIGGER sub_orders_pending_payment_guard
+BEFORE INSERT ON public.sub_orders
+FOR EACH ROW EXECUTE FUNCTION public.mark_new_sub_order_pending_payment();
+
+CREATE OR REPLACE FUNCTION public.sync_sub_orders_with_order_payment()
+RETURNS trigger
+LANGUAGE plpgsql
+SET search_path = public, pg_temp
+AS $function$
+BEGIN
+  IF OLD.status IS DISTINCT FROM NEW.status THEN
+    IF NEW.status = 'paid' THEN
+      UPDATE public.sub_orders
+      SET status = 'awaiting_fulfillment', updated_at = now()
+      WHERE order_id = NEW.id AND status = 'pending_payment';
+    ELSIF NEW.status = 'cancelled' THEN
+      UPDATE public.sub_orders
+      SET status = 'cancelled', updated_at = now()
+      WHERE order_id = NEW.id AND status = 'pending_payment';
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$function$;
+
+DROP TRIGGER IF EXISTS orders_sync_sub_order_payment_status ON public.orders;
+CREATE TRIGGER orders_sync_sub_order_payment_status
+AFTER UPDATE OF status ON public.orders
+FOR EACH ROW EXECUTE FUNCTION public.sync_sub_orders_with_order_payment();
