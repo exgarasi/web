@@ -1,4 +1,11 @@
 -- EXGARASI migration 0023: secure, atomic buyer checkout.
+ALTER TABLE public.payments
+  ADD COLUMN IF NOT EXISTS payment_method text NOT NULL DEFAULT 'manual_bank_transfer';
+ALTER TABLE public.payments
+  ADD CONSTRAINT payments_payment_method_check
+  CHECK (payment_method IN ('manual_bank_transfer','manual_qris','midtrans'))
+  NOT VALID;
+
 -- The function executes with a fixed search_path and derives the buyer from
 -- the transaction-scoped app.user_id set by trusted server code.
 -- Opportunistically release abandoned reservations during buyer checkout.
@@ -324,9 +331,9 @@ BEGIN
   WHERE ci.cart_id = v_cart_id;
 
   INSERT INTO public.payments (
-    order_id, provider, status, amount, currency, idempotency_key
+    order_id, provider, payment_method, status, amount, currency, idempotency_key
   ) VALUES (
-    v_order_id, p_payment_method, 'pending', v_subtotal, v_currency,
+    v_order_id, 'manual', p_payment_method, 'pending', v_subtotal, v_currency,
     p_idempotency_key || ':payment'
   ) RETURNING id INTO v_payment_id;
 
