@@ -27,6 +27,7 @@
     "R2_PUBLIC_BASE_URL": "https://media.exgarasi.id"
   },
   "previews": {
+    // Branch previews use EXGARASI-dev and the dedicated Preview media bucket.
     "vars": {
       "EMAIL_FROM": "EXGARASI Preview <noreply@exgarasi.id>",
       "R2_PUBLIC_BASE_URL": "https://media-preview.exgarasi.id",
