@@ -6,7 +6,7 @@ function getStorageConfig() {
   const { env } = getCloudflareContext();
   const runtime = env as unknown as Record<string, string | undefined>;
   const read = (key: string) => process.env[key]?.trim() || runtime[key]?.trim() || "";
-  const url = read("SUPABASE_URL").replace(/\/$/, "");
+  const url = (read("SUPABASE_URL") || read("NEXT_PUBLIC_SUPABASE_URL") || "https://yttwrhnbbbcnbvvkukdz.supabase.co").replace(/\/$/, "");
   const key = read("SUPABASE_SERVICE_ROLE_KEY");
   if (!url || !key) throw new Error("PAYMENT_PROOF_STORAGE_NOT_CONFIGURED");
   return { url, key };
