@@ -1,7 +1,7 @@
 -- DRAFT ONLY: Admin RBAC roles and permission primitives.
--- This file is intentionally NOT numbered as an executable migration.
--- Review against the target database, add route/action enforcement and tests,
--- then assign a migration number in a separately approved change.
+-- This file is intentionally NOT a numbered executable migration.
+-- Review against the target database and add database-level tests before
+-- assigning a migration number in a separately approved change.
 -- Do not execute against Production.
 
 BEGIN;
@@ -28,26 +28,23 @@ AS $$
     WHERE ur.user_id = public.app_current_user_id()
       AND CASE ur.role
         WHEN 'super_admin' THEN permission_name IN (
-          'admin.dashboard.read','admin.users.manage','admin.roles.manage',
-          'admin.catalog.read','admin.catalog.write','admin.catalog.moderate',
-          'admin.sellers.read','admin.sellers.invite','admin.sellers.verify',
-          'admin.orders.read','admin.orders.manage','admin.finance.read',
-          'admin.finance.manage','admin.audit.read'
+          'dashboard.read','users.manage','roles.manage',
+          'catalog.read','catalog.write','catalog.moderate',
+          'sellers.admin','sellers.read','sellers.invite','sellers.verify',
+          'orders.read','orders.manage','finance.read',
+          'finance.manage','audit.read'
         )
         WHEN 'admin' THEN permission_name IN (
-          'admin.dashboard.read','admin.users.manage',
-          'admin.catalog.read','admin.catalog.write','admin.catalog.moderate',
-          'admin.sellers.read','admin.sellers.invite','admin.sellers.verify',
-          'admin.orders.read','admin.orders.manage','admin.finance.read',
-          'admin.audit.read'
+          'dashboard.read','users.manage',
+          'catalog.read','catalog.write','catalog.moderate',
+          'sellers.admin','sellers.read','sellers.invite','sellers.verify',
+          'orders.read','orders.manage','finance.read','audit.read'
         )
         WHEN 'finance' THEN permission_name IN (
-          'admin.dashboard.read','admin.orders.read','admin.finance.read',
-          'admin.finance.manage'
+          'dashboard.read','orders.read','finance.read','finance.manage'
         )
         WHEN 'moderator' THEN permission_name IN (
-          'admin.dashboard.read','admin.catalog.read','admin.catalog.moderate',
-          'admin.sellers.read','admin.sellers.verify'
+          'dashboard.read','catalog.read','catalog.moderate','sellers.read'
         )
         ELSE false
       END
