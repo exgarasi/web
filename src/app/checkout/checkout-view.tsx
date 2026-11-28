@@ -136,7 +136,7 @@ export function CheckoutView() {
     <p className="mt-3 text-center text-sm text-[#667085]">Total tagihan {money(Number(order.total_amount), order.currency)}.</p>
     <section className="mt-6 rounded-2xl border border-[#e5eaf0] p-5">
       <h2 className="font-bold">Instruksi pembayaran</h2>
-      {paymentInstructions?.configured && paymentInstructions.instructions.method === "manual_bank_transfer" && paymentInstructions.instructions.bank ? (
+      {!order.shipping_confirmed_at ? (<p className="mt-3 rounded-xl bg-amber-50 p-4 text-sm leading-6 text-amber-900">Jangan melakukan pembayaran dahulu. Tunggu admin mengonfirmasi ongkos kirim dan total akhir pesanan.</p>) : paymentInstructions?.configured && paymentInstructions.instructions.method === "manual_bank_transfer" && paymentInstructions.instructions.bank ? (
         <div className="mt-4 space-y-2 text-sm">
           <p>Bank: <strong>{paymentInstructions.instructions.bank.name}</strong></p>
           <p>Atas nama: <strong>{paymentInstructions.instructions.bank.accountName}</strong></p>
