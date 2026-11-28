@@ -18,7 +18,7 @@ export function AccountHeader({ name, email, roles = [], active = "account" }: A
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const isAdmin = roles.includes("admin") || roles.includes("super_admin");
+  const isAdmin = roles.some((role) => ["admin", "super_admin", "finance", "moderator"].includes(role));
 
   async function handleSignOut() {
     if (busy) return;
