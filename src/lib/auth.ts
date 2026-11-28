@@ -217,6 +217,7 @@ export async function getAuth() {
       allowedHosts: [
         "exgarasi.id",
         "www.exgarasi.id",
+        "exgarasi.exgarasi-id.workers.dev",
         "fix-google-oauth-prod-isolated-exgarasi.exgarasi-id.workers.dev",
         "feat-seller-verification-exgarasi.exgarasi-id.workers.dev",
         "*-exgarasi.exgarasi-id.workers.dev",
@@ -227,6 +228,7 @@ export async function getAuth() {
     trustedOrigins: [
       "https://exgarasi.id",
       "https://www.exgarasi.id",
+      "https://exgarasi.exgarasi-id.workers.dev",
       "https://*-exgarasi.exgarasi-id.workers.dev",
     ],
     database: drizzleAdapter(database.db, { provider: "pg", schema: authSchemaTables }),
