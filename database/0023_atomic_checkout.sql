@@ -21,6 +21,7 @@ DECLARE
   v_currency char(3);
   v_currency_count integer;
   v_item_count integer;
+  v_cart_item_count integer;
   v_subtotal bigint;
   v_store record;
   v_sub_order_id uuid;
@@ -39,6 +40,9 @@ BEGIN
     RAISE EXCEPTION 'INVALID_IDEMPOTENCY_KEY';
   END IF;
 
+  -- Serialize retries with the same buyer/idempotency key before checking for an existing order.
+  PERFORM pg_advisory_xact_lock(hashtextextended(v_user_id::text || ':' || p_idempotency_key, 0));
+
   -- A retried request returns the original order and never duplicates stock holds.
   SELECT id, order_number, total_amount, currency
     INTO v_order_id, v_order_number, v_subtotal, v_currency
@@ -54,6 +58,7 @@ BEGIN
       'total_amount', v_subtotal,
       'currency', trim(v_currency),
       'payment_id', v_payment_id,
+      'shipping_pending', true,
       'reused', true
     );
   END IF;
@@ -117,7 +122,10 @@ BEGIN
     AND p.moderation_status = 'approved'
     AND s.status = 'active';
 
-  IF v_item_count = 0 THEN
+  SELECT count(*)::integer INTO v_cart_item_count
+  FROM public.cart_items WHERE cart_id = v_cart_id;
+
+  IF v_item_count = 0 OR v_item_count <> v_cart_item_count THEN
     RAISE EXCEPTION 'CART_EMPTY_OR_UNAVAILABLE';
   END IF;
   IF v_currency_count <> 1 THEN
@@ -141,13 +149,13 @@ BEGIN
     SELECT
       s.id AS store_id,
       sum(ci.quantity * l.price_amount)::bigint AS store_subtotal,
-      sum(
-        round(
+      (
+        sum(round(
           (ci.quantity * l.price_amount)::numeric *
           coalesce(s.commission_rate_bps, cr.rate_bps,
             CASE WHEN s.store_type = 'official' THEN 0 ELSE NULL END
           ) / 10000
-        ) + coalesce(cr.fixed_fee_amount, 0)
+        )) + max(coalesce(cr.fixed_fee_amount, 0))
       )::bigint AS commission_amount,
       bool_or(coalesce(s.commission_rate_bps, cr.rate_bps,
         CASE WHEN s.store_type = 'official' THEN 0 ELSE NULL END
