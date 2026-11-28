@@ -121,11 +121,11 @@ export async function POST(request: Request) {
         throw new Error("FORBIDDEN");
 
       const categories = await tx`select name from public.categories where is_active=true`;
-      const categoryNames = new Set(categories.map((c: {name:string}) => c.name.trim().toLowerCase()));
+      const categoryNames = new Set(categories.map((c) => String(c.name).trim().toLowerCase()));
       const brands = await tx`select name from public.brands`;
-      const brandNames = new Set(brands.map((b: {name:string}) => b.name.trim().toLowerCase()));
+      const brandNames = new Set(brands.map((b) => String(b.name).trim().toLowerCase()));
       const existing = await tx`select seller_sku from public.listings where store_id=${storeId}::uuid`;
-      const existingSkus = new Set(existing.map((r: {seller_sku:string}) => r.seller_sku.toLowerCase()));
+      const existingSkus = new Set(existing.map((r) => String(r.seller_sku).toLowerCase()));
 
       for (const row of rows) {
         const d = row.data;
