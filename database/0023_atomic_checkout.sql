@@ -1,6 +1,57 @@
 -- EXGARASI migration 0023: secure, atomic buyer checkout.
 -- The function executes with a fixed search_path and derives the buyer from
 -- the transaction-scoped app.user_id set by trusted server code.
+-- Opportunistically release abandoned reservations during buyer checkout.
+CREATE OR REPLACE FUNCTION public.release_expired_stock_reservations()
+RETURNS integer
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $
+DECLARE
+  v_order_ids uuid[];
+  v_released integer;
+BEGIN
+  WITH expired AS (
+    UPDATE public.stock_reservations
+    SET status = 'expired'
+    WHERE status = 'active' AND expires_at <= now()
+    RETURNING listing_id, quantity, order_id
+  ),
+  totals AS (
+    SELECT listing_id, sum(quantity)::integer AS quantity
+    FROM expired
+    GROUP BY listing_id
+  ),
+  inventory_release AS (
+    UPDATE public.inventories i
+    SET reserved_stock = greatest(0, i.reserved_stock - totals.quantity),
+        updated_at = now()
+    FROM totals
+    WHERE i.listing_id = totals.listing_id
+    RETURNING i.listing_id
+  )
+  SELECT coalesce(array_agg(DISTINCT order_id), ARRAY[]::uuid[]), count(*)::integer
+  INTO v_order_ids, v_released
+  FROM expired;
+
+  IF coalesce(array_length(v_order_ids, 1), 0) > 0 THEN
+    UPDATE public.orders
+    SET status = 'cancelled', updated_at = now()
+    WHERE id = ANY(v_order_ids) AND status = 'pending_payment';
+
+    UPDATE public.payments
+    SET status = 'expired'
+    WHERE order_id = ANY(v_order_ids) AND status = 'pending';
+  END IF;
+
+  RETURN coalesce(v_released, 0);
+END;
+$;
+
+REVOKE ALL ON FUNCTION public.release_expired_stock_reservations() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.release_expired_stock_reservations() TO exgarasi_app;
+
 CREATE OR REPLACE FUNCTION public.create_order_from_cart(
   p_address_id uuid,
   p_payment_method text,
@@ -31,6 +82,8 @@ BEGIN
   IF v_user_id IS NULL THEN
     RAISE EXCEPTION 'UNAUTHENTICATED';
   END IF;
+
+  PERFORM public.release_expired_stock_reservations();
 
   IF p_payment_method NOT IN ('manual_bank_transfer', 'manual_qris') THEN
     RAISE EXCEPTION 'INVALID_PAYMENT_METHOD';
