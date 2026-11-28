@@ -21,20 +21,44 @@ function parseCsv(input: string): string[][] {
   let row: string[] = [];
   let cell = "";
   let quoted = false;
+  let closedQuote = false;
+
+  const pushRow = () => {
+    row.push(cell);
+    if (row.some((value) => value.trim() !== "")) rows.push(row);
+    row = [];
+    cell = "";
+    closedQuote = false;
+  };
+
   for (let i = 0; i < input.length; i++) {
     const char = input[i];
     if (quoted) {
       if (char === '"' && input[i + 1] === '"') { cell += '"'; i++; }
-      else if (char === '"') quoted = false;
+      else if (char === '"') { quoted = false; closedQuote = true; }
       else cell += char;
-    } else if (char === '"' && cell.length === 0) quoted = true;
+      continue;
+    }
+
+    if (closedQuote) {
+      if (char === ",") { row.push(cell); cell = ""; closedQuote = false; }
+      else if (char === "\n") pushRow();
+      else if (char === "\r" && input[i + 1] === "\n") { i++; pushRow(); }
+      else if (char !== " " && char !== "\t") throw new Error("Format CSV tidak valid setelah tanda kutip.");
+      continue;
+    }
+
+    if (char === '"' && cell.length === 0) quoted = true;
+    else if (char === '"') throw new Error("Format CSV memiliki tanda kutip yang tidak valid.");
     else if (char === ",") { row.push(cell); cell = ""; }
-    else if (char === "\n") { row.push(cell.replace(/\r$/, "")); rows.push(row); row = []; cell = ""; }
+    else if (char === "\n") pushRow();
+    else if (char === "\r" && input[i + 1] === "\n") { i++; pushRow(); }
     else cell += char;
   }
+
   if (quoted) throw new Error("CSV memiliki tanda kutip yang tidak ditutup.");
-  if (cell.length || row.length) { row.push(cell.replace(/\r$/, "")); rows.push(row); }
-  return rows.filter((r) => r.some((v) => v.trim() !== ""));
+  if (cell.length || row.length || closedQuote) pushRow();
+  return rows;
 }
 
 function safeImageUrl(value: string): boolean {
@@ -51,6 +75,10 @@ function safeImageUrl(value: string): boolean {
 
 export async function POST(request: Request) {
   try {
+    const contentLength = Number(request.headers.get("content-length") ?? 0);
+    if (Number.isFinite(contentLength) && contentLength > MAX_FILE_BYTES + 128 * 1024)
+      return NextResponse.json({ error: "Ukuran permintaan terlalu besar. CSV maksimal 2 MB." }, { status: 413 });
+
     const form = await request.formData();
     const file = form.get("file");
     const storeId = String(form.get("storeId") ?? "");
