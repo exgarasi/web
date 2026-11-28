@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 type Address = {
@@ -43,6 +43,7 @@ export function CheckoutView() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [order, setOrder] = useState<{ order_id: string; order_number: string; total_amount: number; currency: string; shipping_pending: boolean } | null>(null);
+  const idempotencyKey = useRef("");
 
   const load = useCallback(async () => {
     try {
