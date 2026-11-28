@@ -9,6 +9,7 @@ export type AdminPermission =
   | "catalog.read"
   | "catalog.write"
   | "catalog.moderate"
+  | "sellers.admin"
   | "sellers.read"
   | "sellers.invite"
   | "sellers.verify"
@@ -21,13 +22,13 @@ export type AdminPermission =
 const ROLE_PERMISSIONS: Record<string, readonly AdminPermission[]> = {
   super_admin: [
     "dashboard.read", "users.manage", "roles.manage", "catalog.read",
-    "catalog.write", "catalog.moderate", "sellers.read", "sellers.invite",
+    "catalog.write", "catalog.moderate", "sellers.admin", "sellers.read", "sellers.invite",
     "sellers.verify", "orders.read", "orders.manage", "finance.read",
     "finance.manage", "audit.read",
   ],
   admin: [
     "dashboard.read", "users.manage", "catalog.read", "catalog.write",
-    "catalog.moderate", "sellers.read", "sellers.invite", "sellers.verify",
+    "catalog.moderate", "sellers.admin", "sellers.read", "sellers.invite", "sellers.verify",
     "orders.read", "orders.manage", "finance.read", "audit.read",
   ],
   finance: ["dashboard.read", "orders.read", "finance.read", "finance.manage"],
