@@ -29,7 +29,7 @@ export async function PATCH(request: Request) {
   const phone = typeof body?.phone === "string" ? body.phone.trim() : "";
   if (fullName.length < 2 || fullName.length > 120)
     return NextResponse.json({ error: "Nama harus terdiri dari 2–120 karakter." }, { status: 400 });
-  if (phone.length > 30 || (phone && !/^\\+?[0-9\\s().-]{7,30}$/.test(phone)))
+  if (phone.length > 30 || (phone && !/^\+?[0-9\s().-]{7,30}$/.test(phone)))
     return NextResponse.json({ error: "Format nomor telepon tidak valid." }, { status: 400 });
 
   try {
