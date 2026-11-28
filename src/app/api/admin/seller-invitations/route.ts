@@ -59,7 +59,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Undangan belum terkirim. Undangan dibatalkan; periksa konfigurasi Resend/Brevo dan coba lagi." }, { status: 502 });
     }
 
-    return NextResponse.json({ invitationId: result.invitationId, email, expiresAt: result.expiresAt, delivery: "accepted" }, { status: 201 });
+    return NextResponse.json({ invitationId: result.invitationId, email, expiresAt: result.expiresAt, acceptUrl: acceptUrl.toString(), delivery: "accepted" }, { status: 201 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Invitation failed.";
     const status = message === "FORBIDDEN" ? 403 : message === "UNAUTHENTICATED" ? 401 : 500;
