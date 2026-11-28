@@ -8,7 +8,8 @@ Draft implementation plan for PR #13. No database migration has been applied. Th
 | Capability | Super Admin | Admin | Finance | Moderator |
 |---|---:|---:|---:|---:|
 | Dashboard overview | Yes | Yes | Yes | Yes |
-| Manage users and role assignments | Yes | Yes | No | No |
+| Manage user accounts | Yes | Yes | No | No |
+| Assign/change privileged roles | Yes | No | No | No |
 | Read catalog | Yes | Yes | No | Yes |
 | Create/edit catalog | Yes | Yes | No | No |
 | Moderate catalog | Yes | Yes | No | Yes |
