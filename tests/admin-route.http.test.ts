@@ -4,7 +4,6 @@ import { createAdminRoute } from "../src/lib/admin-route";
 import { roleHasPermission, type AdminPermission } from "../src/lib/admin-role-permissions";
 
 type Role = "super_admin" | "admin" | "finance" | "moderator" | "buyer";
-const permissions: AdminPermission[] = ["sellers.admin", "sellers.invite"];
 
 async function invoke(role: Role | null, permission: AdminPermission, method: string) {
   let reachedHandler = false;
