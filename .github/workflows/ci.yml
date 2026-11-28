@@ -1,6 +1,8 @@
 name: EXGARASI CI
 
 on:
+  pull_request:
+    branches: [main, "feat/**", "release/**", "fix/**"]
   push:
     branches: [main, "feat/**", "release/**", "fix/**"]
   workflow_dispatch:
