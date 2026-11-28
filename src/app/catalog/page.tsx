@@ -103,8 +103,8 @@ export default async function CatalogPage({ searchParams }: { searchParams: Sear
           <p className="text-[10px] text-[#929cab]">{products.length} produk ditemukan</p>
         </div>
         <nav className="mt-4 flex gap-2 overflow-x-auto pb-2">
-          <Link href="/catalog" className={`shrink-0 rounded-full px-4 py-2.5 text-[10px] font-bold transition ${!category ? "bg-[#111318] text-white" : "border border-[#e0e5eb] bg-white text-[#687384] hover:border-[#0099ff] hover:text-[#0099ff]"}`}>Semua produk</Link>
-          {categories.map((item) => <Link key={item.slug} href={`/catalog?category=${encodeURIComponent(item.slug)}`} className={`shrink-0 rounded-full px-4 py-2.5 text-[10px] font-bold transition ${category === item.slug ? "bg-[#111318] text-white" : "border border-[#e0e5eb] bg-white text-[#687384] hover:border-[#0099ff] hover:text-[#0099ff]"}`}>{item.name}</Link>)}
+          <Link href="/catalog" className={`shrink-0 rounded-full px-5 py-3 text-[11px] font-bold leading-none transition ${!category ? "border border-[#111318] bg-[#111318] !text-white shadow-sm" : "border border-[#e0e5eb] bg-white !text-[#344054] hover:border-[#0099ff] hover:!text-[#007fd6]"}`}>Semua produk</Link>
+          {categories.map((item) => <Link key={item.slug} href={`/catalog?category=${encodeURIComponent(item.slug)}`} className={`shrink-0 rounded-full px-4 py-2.5 text-[10px] font-bold transition ${category === item.slug ? "border border-[#111318] bg-[#111318] !text-white shadow-sm" : "border border-[#e0e5eb] bg-white !text-[#344054] hover:border-[#0099ff] hover:!text-[#007fd6]"}`}>{item.name}</Link>)}
         </nav>
         <div className="mt-7 flex items-center justify-between border-b border-[#e6ebf0] pb-4"><div><h2 className="text-lg font-semibold tracking-tight">Katalog pilihan</h2><p className="mt-1 text-[10px] text-[#929cab]">Produk aktif yang telah melalui proses persetujuan</p></div><Link href="/sign-up" className="hidden items-center gap-1.5 text-[10px] font-bold text-[#008fe8] hover:underline sm:inline-flex">Jual di EXGARASI<ArrowUpRight size={13}/></Link></div>
         <CatalogGrid products={products}/>
