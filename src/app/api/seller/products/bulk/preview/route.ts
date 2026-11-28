@@ -120,7 +120,7 @@ export async function POST(request: Request) {
       const store = memberships[0];
       if (!store) throw new Error("FORBIDDEN");
       if (store.status !== "active") throw new Error("STORE_NOT_ACTIVE");
-      if (store.member_role && !["owner", "manager", "catalog_manager"].includes(String(store.member_role)))
+      if (store.member_role && !["owner", "manager", "catalog"].includes(String(store.member_role)))
         throw new Error("FORBIDDEN");
 
       const categories = await tx`select name from public.categories where is_active=true`;
