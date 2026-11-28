@@ -1,5 +1,6 @@
 "use client";
 import { createAuthClient } from "better-auth/react";
-export const { signIn, signUp, signOut, useSession, requestPasswordReset, resetPassword } = createAuthClient({
-  baseURL: process.env.NEXT_PUBLIC_APP_URL,
-});
+
+// Let Better Auth use the current page origin. This keeps branch previews
+// talking to their own Worker instead of accidentally calling Production.
+export const { signIn, signUp, signOut, useSession, requestPasswordReset, resetPassword } = createAuthClient();

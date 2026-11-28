@@ -1,17 +1,17 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ArrowLeft, PackagePlus } from "lucide-react";
-import { getCurrentUser } from "@/lib/current-user";
+import { getAdminAccess } from "@/lib/admin-permissions";
 import { withAuthenticatedDb } from "@/lib/db-context";
+import { AccountHeader } from "@/components/account-header";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export default async function AdminCatalogPage() {
-  const user = await getCurrentUser();
-  if (!user) redirect("/sign-in");
-  const roles = user.roles as string[];
-  if (!roles.includes("admin") && !roles.includes("super_admin")) redirect("/");
+  const access = await getAdminAccess("catalog.read");
+  if (!access) redirect("/");
+  const { user, roles } = access;
 
   const products = await withAuthenticatedDb(async (tx) => {
     return tx`
@@ -30,6 +30,7 @@ export default async function AdminCatalogPage() {
 
   return (
     <main className="min-h-screen bg-[#f7f9fc] text-gray-950">
+      <AccountHeader name={user.full_name || "Administrator"} email={user.email} roles={roles} active="admin" />
       <header className="border-b border-gray-200 bg-white">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4">
           <Link href="/admin/dashboard" className="flex items-center gap-2 text-sm font-semibold text-gray-600 hover:text-sky-600"><ArrowLeft size={16}/> Dashboard</Link>

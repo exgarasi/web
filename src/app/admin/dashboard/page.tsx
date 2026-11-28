@@ -11,21 +11,24 @@ import {
   Store,
   Users,
 } from "lucide-react";
-import { getCurrentUser } from "@/lib/current-user";
+import { getAdminAccess } from "@/lib/admin-permissions";
+import { roleHasPermission } from "@/lib/admin-role-permissions";
 import { withAuthenticatedDb } from "@/lib/db-context";
 import { SellerInviteForm } from "./invite-form";
+import { AccountHeader } from "@/components/account-header";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const navigation = [
-  { label: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard, active: true },
+  { label: "Dasbor", href: "/admin/dashboard", icon: LayoutDashboard, active: true },
   { label: "Katalog produk", href: "/admin/catalog", icon: Package },
   { label: "Inventaris", icon: Boxes, soon: true },
   { label: "Penjualan", icon: ShoppingBag, soon: true },
   { label: "Pesanan", icon: ClipboardList, soon: true },
+  { label: "Verifikasi pembayaran", href: "/admin/payments", icon: Activity },
   { label: "Pelanggan", icon: Users, soon: true },
-  { label: "Partner seller", icon: Store, soon: true },
+  { label: "Mitra penjual", href: "/admin/seller-verifications", icon: Store },
 ];
 
 function MetricCard({
@@ -56,16 +59,21 @@ function MetricCard({
 }
 
 export default async function AdminDashboard() {
-  const user = await getCurrentUser();
-  if (!user) redirect("/sign-in");
-  const roles = user.roles as string[];
-  if (!roles.includes("admin") && !roles.includes("super_admin")) redirect("/");
+  const access = await getAdminAccess("dashboard.read");
+  if (!access) redirect("/");
+  const { user, roles, activeRole: activeAdminRole } = access;
+  const canReadSellers = roles.some((role) => roleHasPermission(role, "sellers.read"));
+  const canReadCatalog = roles.some((role) => roleHasPermission(role, "catalog.read"));
+  const canReadOrders = roles.some((role) => roleHasPermission(role, "orders.read"));
+  const canInviteSellers = roles.some((role) => roleHasPermission(role, "sellers.invite"));
+  const canAdminSellers = roles.some((role) => roleHasPermission(role, "sellers.admin"));
+  const canVerifyPayments = roles.some((role) => roleHasPermission(role, "payments.verify"));
 
   const metrics = await withAuthenticatedDb(async (tx) => {
     const [sellers, listings, orders] = await Promise.all([
-      tx`select count(*)::int as count from public.stores where store_type = 'partner'`,
-      tx`select count(*)::int as count from public.listings`,
-      tx`select count(*)::int as count from public.orders`,
+      canReadSellers ? tx`select count(*)::int as count from public.stores where store_type = 'partner'` : Promise.resolve([]),
+      canReadCatalog ? tx`select count(*)::int as count from public.listings` : Promise.resolve([]),
+      canReadOrders ? tx`select count(*)::int as count from public.orders` : Promise.resolve([]),
     ]);
     return {
       sellers: Number(sellers[0]?.count ?? 0),
@@ -73,9 +81,17 @@ export default async function AdminDashboard() {
       orders: Number(orders[0]?.count ?? 0),
     };
   });
+  const visibleNavigation = navigation.filter((item) =>
+    item.active
+    || (item.href === "/admin/catalog" && canReadCatalog)
+    || (item.href === "/admin/seller-verifications" && canAdminSellers)
+    || (item.href === "/admin/payments" && canVerifyPayments),
+  );
 
   return (
-    <div className="min-h-screen bg-[#f7f9fc] text-gray-950 lg:flex">
+    <>
+      <AccountHeader name={user.full_name || "Administrator"} email={user.email} roles={roles} active="admin" />
+      <div className="min-h-screen bg-[#f7f9fc] text-gray-950 lg:flex">
       <aside className="border-b border-gray-200 bg-white lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col lg:border-b-0 lg:border-r">
         <div className="flex h-16 items-center gap-3 border-b border-gray-100 px-5">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#0099ff] text-sm font-black text-white">EX</div>
@@ -87,7 +103,7 @@ export default async function AdminDashboard() {
         <div className="px-4 py-5">
           <p className="mb-3 px-3 text-[10px] font-bold uppercase tracking-[.18em] text-gray-400">Workspace</p>
           <nav className="grid grid-cols-2 gap-1 lg:grid-cols-1">
-            {navigation.map((item) => {
+            {visibleNavigation.map((item) => {
               const Icon = item.icon;
               return item.active ? (
                 <a key={item.label} href={item.href} className="flex items-center gap-3 rounded-xl bg-sky-50 px-3 py-2.5 text-sm font-semibold text-[#0088e6]">
@@ -126,7 +142,7 @@ export default async function AdminDashboard() {
             <p className="text-xs text-gray-400">EXGARASI / Admin</p>
             <p className="mt-0.5 text-sm font-semibold">Dashboard overview</p>
           </div>
-          <span className="rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1.5 text-[11px] font-semibold text-emerald-700">System online</span>
+          <div className="flex items-center gap-2"><span className="rounded-full border border-sky-100 bg-sky-50 px-3 py-1.5 text-[11px] font-semibold capitalize text-sky-700">{activeAdminRole?.replace("_", " ")}</span><span className="rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1.5 text-[11px] font-semibold text-emerald-700">System online</span></div>
         </header>
 
         <div className="mx-auto max-w-7xl px-5 py-8 sm:px-8">
@@ -135,14 +151,15 @@ export default async function AdminDashboard() {
               <p className="text-xs font-bold uppercase tracking-[.2em] text-[#0099ff]">Overview</p>
               <h1 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">Selamat datang, {user.full_name || "Admin"}</h1>
               <p className="mt-2 text-sm text-gray-500">Pantau ekosistem EXGARASI dari satu tempat.</p>
+              <p className="mt-3 inline-flex rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600">Hak akses aktif: <span className="ml-1 font-semibold capitalize text-gray-900">{activeAdminRole?.replace("_", " ")}</span></p>
             </div>
             <div className="flex items-center gap-2 text-xs text-gray-400"><Activity size={15} /> Data langsung dari database</div>
           </div>
 
           <div className="mt-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            <MetricCard label="Partner seller" value={metrics.sellers} helper="Jumlah toko partner terdaftar" icon={Store} />
-            <MetricCard label="Product listings" value={metrics.listings} helper="Listing produk yang tercatat" icon={Package} />
-            <MetricCard label="Total orders" value={metrics.orders} helper="Pesanan yang tercatat di sistem" icon={ShoppingBag} />
+            {canReadSellers && <MetricCard label="Mitra penjual" value={metrics.sellers} helper="Jumlah toko partner terdaftar" icon={Store} />}
+            {canReadCatalog && <MetricCard label="Daftar produk" value={metrics.listings} helper="Listing produk yang tercatat" icon={Package} />}
+            {canReadOrders && <MetricCard label="Total pesanan" value={metrics.orders} helper="Pesanan yang tercatat di sistem" icon={ShoppingBag} />}
           </div>
 
           <div className="mt-7 grid gap-5 xl:grid-cols-[1.3fr_.7fr]">
@@ -173,7 +190,7 @@ export default async function AdminDashboard() {
               </div>
             </section>
 
-            <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm shadow-gray-100/70 sm:p-6">
+            {canInviteSellers && <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm shadow-gray-100/70 sm:p-6">
               <div className="flex items-center gap-2">
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-50 text-[#0099ff]"><Store size={18} /></div>
                 <div>
@@ -186,7 +203,7 @@ export default async function AdminDashboard() {
               <div className="mt-5 flex items-center gap-2 border-t border-gray-100 pt-4 text-[11px] text-gray-400">
                 <ArrowUpRight size={13} /> Persetujuan seller tetap melalui admin
               </div>
-            </section>
+            </section>}
           </div>
 
           <footer className="mt-8 flex flex-col gap-1 border-t border-gray-200 py-5 text-[11px] text-gray-400 sm:flex-row sm:items-center sm:justify-between">
@@ -195,6 +212,7 @@ export default async function AdminDashboard() {
           </footer>
         </div>
       </main>
-    </div>
+      </div>
+    </>
   );
 }

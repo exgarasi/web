@@ -5,7 +5,7 @@
 - [x] Locate GitHub repository and create isolated feature branch
 - [x] Add initial architecture and database foundation
 - [x] Add ordered SQL migration runner and CI workflow (CI execution still pending)
-- [ ] Select managed PostgreSQL provider and create dev/preview/prod environments
+- [x] Use the existing Supabase-managed PostgreSQL project `EXGARASI-dev` for the current build; no additional environments or paid resources
 - [x] Select Better Auth and implement PostgreSQL-backed sessions
 - [ ] Complete automated unit, integration and RLS isolation tests
 

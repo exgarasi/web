@@ -2,6 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getDatabase } from "@/db";
 import { ProductDetail } from "../product-detail";
+import { getCurrentUser } from "@/lib/current-user";
+import { AccountHeader } from "@/components/account-header";
+import { resolvePublicImageUrl } from "@/lib/image-url";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -9,7 +12,7 @@ export const dynamic = "force-dynamic";
 type Props = { params: Promise<{ id: string }> };
 
 export default async function ProductPage({ params }: Props) {
-  const { id } = await params;
+  const [{ id }, user] = await Promise.all([params, getCurrentUser()]);
   const db = await getDatabase();
   let product: {
     id: string; sku: string; title: string; description: string | null;
@@ -53,7 +56,7 @@ export default async function ProductPage({ params }: Props) {
         storeName: String(row.store_name),
         storeDescription: row.store_description ? String(row.store_description) : null,
         stock: Number(row.stock ?? 0),
-        images: imageRows.map((image) => ({ key: String(image.object_key), alt: image.alt_text ? String(image.alt_text) : null })),
+        images: imageRows.map((image) => ({ key: resolvePublicImageUrl(String(image.object_key)) ?? "", alt: image.alt_text ? String(image.alt_text) : null })),
         attributes: { ...(row.product_attributes as Record<string, unknown> ?? {}), ...(row.listing_attributes as Record<string, unknown> ?? {}) },
       };
     }
@@ -65,12 +68,16 @@ export default async function ProductPage({ params }: Props) {
 
   return (
     <main className="min-h-screen bg-[#f8fafc] text-gray-950">
+      {user ? (
+        <AccountHeader name={user.full_name || "EXGARASI member"} email={user.email} roles={user.roles as string[]} />
+      ) : (
       <header className="border-b border-gray-200 bg-white">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-5">
           <Link href="/" className="text-xl font-black tracking-[.2em]">EXGARASI<span className="text-sky-500">.</span></Link>
           <Link href="/catalog" className="text-sm font-semibold text-gray-600 hover:text-sky-600">← Kembali ke katalog</Link>
         </div>
       </header>
+      )}
       <ProductDetail product={product} />
     </main>
   );

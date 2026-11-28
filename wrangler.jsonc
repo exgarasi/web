@@ -4,7 +4,8 @@
   "main": ".open-next/worker.js",
   "compatibility_date": "2026-11-18",
   "compatibility_flags": [
-    "nodejs_compat"
+    "nodejs_compat",
+    "nodejs_compat_populate_process_env"
   ],
   "upload_source_maps": true,
   "assets": {
@@ -22,6 +23,7 @@
     "enabled": true
   },
   "vars": {
-    "EMAIL_FROM": "EXGARASI <noreply@exgarasi.id>"
+    "EMAIL_FROM": "EXGARASI <noreply@exgarasi.id>",
+    "R2_PUBLIC_BASE_URL": "https://media.exgarasi.id"
   }
 }

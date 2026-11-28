@@ -17,7 +17,8 @@ export async function getDatabase() {
     throw new Error("Cloudflare HYPERDRIVE binding is missing. Configure it in wrangler.jsonc.");
   }
 
-  // Hyperdrive maintains the shared pool; this client is scoped to one request operation.
+  // Reserve one connection for this request so the least-privilege role applies
+  // to every query made by the auth adapter and application database operations.
   const client = postgres(connectionString, {
     max: 5,
     fetch_types: false,
@@ -25,9 +26,37 @@ export async function getDatabase() {
     connection: { application_name: "EXGARASI Cloudflare Worker" },
   });
 
-  return {
-    sql: client,
-    db: drizzle(client, { schema: authSchemaTables }),
-    close: () => client.end({ timeout: 5 }),
-  };
+  let reserved: Awaited<ReturnType<typeof client.reserve>> | undefined;
+
+  try {
+    reserved = await client.reserve();
+    await reserved`SET ROLE exgarasi_app`;
+
+    const [identity] = await reserved`select current_user as role`;
+    if (identity?.role !== "exgarasi_app") {
+      throw new Error("DATABASE_RUNTIME_ROLE_MISMATCH");
+    }
+
+    return {
+      sql: reserved,
+      db: drizzle(reserved, { schema: authSchemaTables }),
+      close: async () => {
+        try {
+          await reserved!`RESET ROLE`;
+        } finally {
+          try {
+            reserved!.release();
+          } finally {
+            await client.end({ timeout: 5 });
+          }
+        }
+      },
+    };
+  } catch (error) {
+    if (reserved) {
+      reserved.release();
+    }
+    await client.end({ timeout: 5 }).catch(() => undefined);
+    throw error;
+  }
 }
