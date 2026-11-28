@@ -28,6 +28,18 @@ export default async function BuyerDashboard() {
             <span className="inline-flex w-fit items-center rounded-full border border-[#b9e3ff] bg-[#eff8ff] px-3 py-1.5 text-[11px] font-bold text-[#006fbd]">Akun pembeli</span>
           </div>
         </div>
+        <section className="mt-6 grid gap-4 sm:grid-cols-2">
+          <Link href="/account/profile" className="rounded-2xl border border-[#e1e7ee] bg-white p-5 shadow-sm transition hover:border-[#0099ff] hover:shadow-md">
+            <p className="text-sm font-bold text-[#202733]">Informasi pribadi</p>
+            <p className="mt-1 text-xs leading-5 text-[#7b8794]">Kelola nama dan nomor WhatsApp akun Anda.</p>
+            <span className="mt-4 inline-flex text-xs font-bold text-[#008fe8]">Kelola profil →</span>
+          </Link>
+          <Link href="/account/addresses" className="rounded-2xl border border-[#e1e7ee] bg-white p-5 shadow-sm transition hover:border-[#0099ff] hover:shadow-md">
+            <p className="text-sm font-bold text-[#202733]">Buku alamat</p>
+            <p className="mt-1 text-xs leading-5 text-[#7b8794]">Pengelolaan alamat pengiriman akan segera tersedia.</p>
+            <span className="mt-4 inline-flex text-xs font-bold text-[#008fe8]">Segera tersedia</span>
+          </Link>
+        </section>
         <section className="mt-6 overflow-hidden rounded-2xl border border-[#e1e7ee] bg-white shadow-sm">
           <div className="flex items-center justify-between border-b border-[#e8edf2] px-6 py-5">
             <div>
