@@ -51,7 +51,11 @@ export function CheckoutView() {
   const [showForm, setShowForm] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [order, setOrder] = useState<{ order_id: string; order_number: string; total_amount: number; currency: string; shipping_pending: boolean } | null>(null);
+  const [order, setOrder] = useState<{ order_id: string; order_number: string; payment_id: string; total_amount: number; currency: string; shipping_pending: boolean } | null>(null);
+  const [proofFile, setProofFile] = useState<File | null>(null);
+  const [proofBusy, setProofBusy] = useState(false);
+  const [proofMessage, setProofMessage] = useState("");
+  const [proofError, setProofError] = useState("");
   const [paymentInstructions, setPaymentInstructions] = useState<ManualInstructions | null>(null);
   const idempotencyKey = useRef("");
 
@@ -87,6 +91,24 @@ export function CheckoutView() {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Gagal menyimpan alamat.");
     } finally { setBusy(false); }
+  }
+
+  async function uploadProof() {
+    if (!order || !proofFile) { setProofError("Pilih gambar bukti pembayaran terlebih dahulu."); return; }
+    setProofBusy(true); setProofError(""); setProofMessage("");
+    try {
+      const formData = new FormData();
+      formData.set("orderId", order.order_id);
+      formData.set("paymentId", order.payment_id);
+      formData.set("file", proofFile);
+      const response = await fetch("/api/payments/proof", { method: "POST", body: formData });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || "Gagal mengunggah bukti.");
+      setProofMessage(payload.message || "Bukti berhasil dikirim.");
+      setProofFile(null);
+    } catch (err) {
+      setProofError(err instanceof Error ? err.message : "Gagal mengunggah bukti pembayaran.");
+    } finally { setProofBusy(false); }
   }
 
   async function placeOrder() {
