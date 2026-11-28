@@ -168,6 +168,31 @@ async function sendPasswordResetEmail(to: string, url: string) {
   });
 }
 
+function escapeEmailHtml(value: string) {
+  return value.replace(/[&<>"']/g, (character) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+  })[character] ?? character);
+}
+
+export async function sendSellerInvitationEmail(to: string, acceptUrl: string, expiresAt: string) {
+  const safeUrl = new URL(acceptUrl);
+  if (safeUrl.protocol !== "https:" && safeUrl.hostname !== "localhost") {
+    throw new Error("Seller invitation URL must use HTTPS.");
+  }
+  const safeEmail = escapeEmailHtml(to);
+  const safeLink = escapeEmailHtml(safeUrl.toString());
+  const expiry = new Date(expiresAt);
+  const expiryLabel = Number.isNaN(expiry.getTime())
+    ? "7 hari sejak undangan diterbitkan"
+    : expiry.toLocaleString("id-ID", { dateStyle: "long", timeStyle: "short", timeZone: "Asia/Makassar" }) + " WITA";
+  await sendEmail({
+    to,
+    subject: "Undangan Seller Partner EXGARASI",
+    html: `<div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;color:#111318;line-height:1.65"><p style="font-size:12px;font-weight:700;letter-spacing:3px;color:#0099ff">EXGARASI PARTNER PROGRAM</p><h1 style="font-size:25px">Undangan Seller Partner</h1><p>Anda diundang untuk bergabung sebagai Seller Partner EXGARASI menggunakan alamat <strong>${safeEmail}</strong>.</p><p>Terima undangan untuk membuat toko dan melengkapi proses verifikasi.</p><p style="margin:28px 0"><a href="${safeLink}" style="display:inline-block;background:#111318;color:#fff;text-decoration:none;padding:13px 22px;border-radius:8px">Terima undangan</a></p><p>Link berlaku sampai ${expiryLabel}. Jika Anda tidak mengharapkan undangan ini, abaikan email ini.</p><p style="font-size:12px;color:#7b8794">EXGARASI · Automotive Marketplace</p></div>`,
+    text: `Anda diundang menjadi Seller Partner EXGARASI dengan email ${to}. Terima undangan di: ${safeUrl.toString()}\nLink berlaku sampai ${expiryLabel}. Jika tidak mengharapkan undangan ini, abaikan email ini.`,
+  });
+}
+
 export async function getAuth() {
   const { env } = getCloudflareContext();
   const runtimeEnv = env as unknown as Record<string, string | undefined>;
