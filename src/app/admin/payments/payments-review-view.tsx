@@ -24,7 +24,7 @@ export function PaymentsReviewView() {
     if(!response.ok) throw new Error(payload.error||"Gagal memuat pembayaran.");
     setRows(payload.payments||[]);
   },[]);
-  useEffect(()=>{void load().catch(e=>setError(e.message));},[load]);
+  useEffect(()=>{void Promise.resolve().then(load).catch(e=>setError(e.message));},[load]);
 
   async function act(key:string,body:Record<string,unknown>){
     setBusy(key);setError("");setMessage("");
