@@ -155,8 +155,21 @@ export function CheckoutView() {
       <p className="mt-4 text-xs leading-5 text-[#667085]">Pembayaran akan diperiksa manual oleh admin. Status pesanan belum lunas sampai admin memverifikasi pembayaran.</p>
     </section>
     <p className="mt-4 rounded-2xl bg-amber-50 p-4 text-sm leading-6 text-amber-900">
-      Ongkos kirim belum termasuk. Admin EXGARASI perlu mengonfirmasi biaya pengiriman sebelum pembayaran dilakukan. Pesanan ini masih berstatus menunggu pembayaran.
+      Ongkos kirim: {order.shipping_confirmed_at ? money(Number(order.shipping_amount || 0), order.currency) : "menunggu konfirmasi admin"}. Total tagihan diperbarui setelah ongkos kirim dikonfirmasi.
     </p>
+    <section className="mt-5 rounded-2xl border border-[#e5eaf0] p-5">
+      <div className="flex items-center justify-between gap-3"><h2 className="font-bold">Status pembayaran</h2><button onClick={()=>void refreshPaymentStatus(order.order_id).catch(e=>setProofError(e.message))} className="text-xs font-bold text-[#168cf0]">Perbarui status</button></div>
+      {order.payment_status === "paid" ? <p className="mt-3 rounded-xl bg-emerald-50 p-4 text-sm font-semibold text-emerald-800">Pembayaran telah diverifikasi. Pesanan Anda sudah lunas.</p>
+      : order.proof_status === "pending" ? <p className="mt-3 rounded-xl bg-amber-50 p-4 text-sm text-amber-900">Bukti pembayaran telah diterima dan sedang diperiksa admin EXGARASI.</p>
+      : !order.shipping_confirmed_at ? <p className="mt-3 rounded-xl bg-amber-50 p-4 text-sm leading-6 text-amber-900">Silakan tunggu admin mengonfirmasi ongkos kirim dan total akhir. Setelah itu, perbarui status untuk melihat tagihan final dan mengunggah bukti.</p>
+      : <><p className="mt-2 text-sm text-[#667085]">Total akhir: <strong>{money(Number(order.total_amount), order.currency)}</strong></p>
+        {order.proof_status === "rejected" && <p className="mt-3 rounded-xl bg-red-50 p-3 text-sm text-red-700">Bukti sebelumnya ditolak. {order.review_note || "Silakan unggah bukti yang benar."}</p>}
+        <p className="mt-2 text-xs leading-5 text-[#667085]">Format JPG, PNG, atau WebP. Maksimal 5 MB. Bukti disimpan secara privat.</p>
+        <input type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>setProofFile(e.target.files?.[0]??null)} className="mt-4 block w-full text-sm" />
+        <button disabled={!proofFile||proofBusy} onClick={()=>void uploadProof()} className="mt-4 w-full rounded-full bg-[#168cf0] px-5 py-3 text-sm font-bold text-white disabled:opacity-40">{proofBusy?"Mengunggah...":"Kirim bukti pembayaran"}</button></>}
+      {proofError&&<p role="alert" className="mt-3 text-sm text-red-700">{proofError}</p>}
+      {proofMessage&&<p className="mt-3 text-sm text-emerald-700">{proofMessage}</p>}
+    </section>
     <Link href="/catalog" className="mt-6 inline-flex w-full justify-center rounded-full bg-[#168cf0] px-6 py-3 text-sm font-bold text-white">Kembali ke marketplace</Link>
   </main>;
 
