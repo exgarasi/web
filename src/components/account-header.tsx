@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowUpRight, CarFront, LayoutDashboard, LogOut, Store } from "lucide-react";
 import { signOut } from "@/lib/auth-client";
-import { LanguageSwitcher, CurrencySwitcher } from "@/components/locale-provider";
+import { CurrencySwitcher } from "@/components/locale-provider";
 
 type AccountHeaderProps = {
   name: string;
@@ -52,7 +52,6 @@ export function AccountHeader({ name, email, roles = [], active = "account" }: A
           {isAdmin && <Link href="/admin/dashboard" aria-current={active === "admin" ? "page" : undefined} className={navClass("admin")}><LayoutDashboard size={16} strokeWidth={2}/><span>Admin</span></Link>}
         </nav>
         <div className="order-2 flex min-w-0 flex-wrap items-center justify-end gap-2 sm:order-3 sm:gap-3">
-          <LanguageSwitcher />
           <CurrencySwitcher />
           <div className="hidden min-w-0 text-right sm:block">
             <p className="max-w-40 truncate text-xs font-bold text-[#202733]">{name || "EXGARASI member"}</p>
