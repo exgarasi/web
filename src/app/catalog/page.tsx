@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft, ArrowUpRight, Search, SlidersHorizontal } from "lucide-react";
-import { LanguageSwitcher, CurrencySwitcher } from "@/components/locale-provider";
+import { CurrencySwitcher } from "@/components/locale-provider";
 import { getDatabase } from "@/db";
 import { CatalogGrid, type CatalogProduct } from "./catalog-grid";
 import { getCurrentUser } from "@/lib/current-user";
@@ -82,7 +82,7 @@ export default async function CatalogPage({ searchParams }: { searchParams: Sear
       <header className="sticky top-0 z-30 border-b border-[#e9edf2] bg-white/95 backdrop-blur-xl">
         <div className="mx-auto flex h-[72px] max-w-[1440px] items-center justify-between gap-4 px-5 sm:px-8 lg:px-12">
           <Link href="/" className="flex items-center gap-2.5"><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#111318] text-[13px] font-black tracking-[-.08em] text-white">EX</span><span className="text-[18px] font-black tracking-[.16em]">EXGARASI<span className="text-[#0099ff]">.</span></span></Link>
-          <div className="flex items-center gap-2"><LanguageSwitcher/><div className="hidden sm:block"><CurrencySwitcher/></div><Link href="/sign-in" className="inline-flex min-h-10 items-center justify-center whitespace-nowrap rounded-full bg-[#111318] px-5 py-2.5 text-[12px] font-bold leading-none !text-white transition hover:bg-[#0099ff]"><span>Masuk</span></Link></div>
+          <div className="flex items-center gap-2"><div className="hidden sm:block"><CurrencySwitcher/></div><Link href="/sign-in" className="inline-flex min-h-10 items-center justify-center whitespace-nowrap rounded-full bg-[#111318] px-5 py-2.5 text-[12px] font-bold leading-none !text-white transition hover:bg-[#0099ff]"><span>Masuk</span></Link></div>
         </div>
       </header>
       )}
