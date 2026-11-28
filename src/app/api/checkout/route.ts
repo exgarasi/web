@@ -61,15 +61,6 @@ export async function POST(request: Request) {
           ${idempotencyKey}::text
         ) as order_data
       `;
-      const orderData = rows[0]?.order_data as { order_id?: string; payment_id?: string } | undefined;
-      if (!orderData?.order_id || !orderData.payment_id) throw new Error("CHECKOUT_PAYMENT_NOT_CREATED");
-      await tx`
-        update public.payments
-        set payment_method = ${paymentMethod}
-        where id = ${orderData.payment_id}::uuid
-          and order_id = ${orderData.order_id}::uuid
-          and status = 'pending'
-      `;
       return orderData;
     });
     return NextResponse.json({ success: true, order: result }, { status: 201 });
