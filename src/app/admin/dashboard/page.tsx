@@ -69,9 +69,9 @@ export default async function AdminDashboard() {
 
   const metrics = await withAuthenticatedDb(async (tx) => {
     const [sellers, listings, orders] = await Promise.all([
-      canReadSellers ? tx\`select count(*)::int as count from public.stores where store_type = 'partner'\` : Promise.resolve([]),
-      canReadCatalog ? tx\`select count(*)::int as count from public.listings\` : Promise.resolve([]),
-      canReadOrders ? tx\`select count(*)::int as count from public.orders\` : Promise.resolve([]),
+      canReadSellers ? tx`select count(*)::int as count from public.stores where store_type = 'partner'` : Promise.resolve([]),
+      canReadCatalog ? tx`select count(*)::int as count from public.listings` : Promise.resolve([]),
+      canReadOrders ? tx`select count(*)::int as count from public.orders` : Promise.resolve([]),
     ]);
     return {
       sellers: Number(sellers[0]?.count ?? 0),
