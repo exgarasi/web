@@ -22,7 +22,7 @@ export async function GET(request: Request) {
       const rows = await tx`
         select o.id as order_id, o.order_number, o.total_amount, o.shipping_amount,
           o.shipping_confirmed_at, o.currency, o.status as order_status,
-          p.id as payment_id, p.payment_method, p.status as payment_status,
+          p.id as payment_id, p.provider as payment_method, p.status as payment_status,
           pp.status as proof_status, pp.review_note
         from public.orders o
         join public.payments p on p.order_id=o.id
