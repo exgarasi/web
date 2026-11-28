@@ -9,7 +9,7 @@ export function SellerApplication(){
  const [storeName,setStoreName]=useState(""),[description,setDescription]=useState(""),[phone,setPhone]=useState(""),[type,setType]=useState("individual");
  const [loading,setLoading]=useState(true),[busy,setBusy]=useState(false),[error,setError]=useState(""),[message,setMessage]=useState("");
  async function load(){const r=await fetch("/api/seller/applications");const d=await r.json();if(!r.ok)throw new Error(d.error||"Gagal memuat pengajuan.");setApplication(d.application);}
- useEffect(()=>{load().catch(e=>setError(e.message)).finally(()=>setLoading(false));},[]);
+ useEffect(()=>{let active=true;fetch("/api/seller/applications").then(async r=>{const d=await r.json();if(!r.ok)throw new Error(d.error||"Gagal memuat pengajuan.");if(active)setApplication(d.application);}).catch(e=>{if(active)setError(e instanceof Error?e.message:"Gagal memuat pengajuan.");}).finally(()=>{if(active)setLoading(false);});return()=>{active=false;};},[]);
  async function submit(e:React.FormEvent){e.preventDefault();setBusy(true);setError("");setMessage("");try{const r=await fetch("/api/seller/applications",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({storeName,description,supportPhone:phone,verificationType:type})});const d=await r.json();if(!r.ok)throw new Error(d.error||"Pengajuan gagal.");await load();setMessage("Pengajuan Seller berhasil dikirim. Tunggu pemeriksaan Admin.");}catch(e){setError(e instanceof Error?e.message:"Pengajuan gagal.");}finally{setBusy(false);}}
  if(loading)return <p className="mt-6 text-sm text-[#667085]">Memuat status pengajuan…</p>;
  if(application)return <div className="mt-6 rounded-2xl border border-[#dbeafe] bg-[#f8fbff] p-5">
