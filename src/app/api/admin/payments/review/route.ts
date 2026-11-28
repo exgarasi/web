@@ -29,9 +29,13 @@ export async function POST(request: Request) {
               total_amount=subtotal_amount-discount_amount+${amount},
               shipping_confirmed_at=now(), updated_at=now()
           where id=${orderId}::uuid and status='pending_payment'
+            and (shipping_amount=${amount} or not exists (
+              select 1 from public.payment_proofs pp
+              where pp.order_id=orders.id and pp.status='pending'
+            ))
           returning id
         `;
-        if (!updated.length) throw new Error("ORDER_NOT_PENDING");
+        if (!updated.length) throw new Error("ORDER_NOT_PENDING_OR_SHIPPING_LOCKED");
         await tx`
           update public.payments
           set amount = (select total_amount from public.orders where id=${orderId}::uuid)
@@ -86,7 +90,7 @@ export async function POST(request: Request) {
   } catch (error) {
     const message = error instanceof Error ? error.message : "";
     const known: Record<string, { status: number; error: string }> = {
-      ORDER_NOT_PENDING: { status: 409, error: "Pesanan tidak lagi menunggu pembayaran." },
+      ORDER_NOT_PENDING_OR_SHIPPING_LOCKED: { status: 409, error: "Pesanan sudah diproses atau ongkos kirim tidak dapat diubah setelah bukti pembayaran dikirim." },
       PAYMENT_NOT_REVIEWABLE: { status: 409, error: "Bukti atau pembayaran sudah diproses." },
       SHIPPING_NOT_CONFIRMED: { status: 409, error: "Ongkos kirim belum dikonfirmasi atau total tidak cocok." },
       REJECTION_NOTE_REQUIRED: { status: 400, error: "Alasan penolakan wajib diisi." },
