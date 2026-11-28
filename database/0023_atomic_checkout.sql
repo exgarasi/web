@@ -199,13 +199,13 @@ BEGIN
     SELECT
       s.id AS store_id,
       sum(ci.quantity * l.price_amount)::bigint AS store_subtotal,
-      sum(
-        round(
+      (
+        sum(round(
           (ci.quantity * l.price_amount)::numeric *
           coalesce(s.commission_rate_bps, cr.rate_bps,
             CASE WHEN s.store_type = 'official' THEN 0 ELSE NULL END
           ) / 10000
-        ) + coalesce(cr.fixed_fee_amount, 0)
+        )) + max(coalesce(cr.fixed_fee_amount, 0))
       )::bigint AS commission_amount,
       bool_or(coalesce(s.commission_rate_bps, cr.rate_bps,
         CASE WHEN s.store_type = 'official' THEN 0 ELSE NULL END
