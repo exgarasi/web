@@ -1,58 +1,63 @@
 # EXGARASI Marketplace
 
-Hybrid automotive marketplace for EXGARASI Official inventory and invited partner sellers.
+EXGARASI is a hybrid automotive marketplace for EXGARASI Official inventory and invited partner sellers.
 
-## Business model
-- Hybrid: EXGARASI Official + partner stores
-- Seller onboarding: invite-only and admin-approved
-- Monetization: commission on completed partner-store sales
-- Launch vertical: automotive (diecast, parts, accessories, lifestyle)
+## Product model
+- Hybrid marketplace: EXGARASI Official + partner stores
+- Seller onboarding: invitation-based, with admin review/approval
+- Initial vertical: automotive (diecast, parts, accessories and lifestyle)
+- Revenue model: commission on eligible completed partner-store sales
 
-## Stack
-- Next.js App Router + TypeScript
-- Tailwind CSS
-- Supabase PostgreSQL via Cloudflare Hyperdrive + Drizzle ORM (Better Auth adapter)
-- Cloudflare Workers + OpenNext adapter
-- Better Auth email/password sessions
+## Application stack
+- Next.js App Router, React and TypeScript
+- Tailwind CSS and Lucide icons
+- Better Auth with PostgreSQL-backed sessions
+- PostgreSQL via Cloudflare Hyperdrive and Drizzle ORM
+- Cloudflare Workers with the OpenNext adapter
 - Cloudflare R2 for product media
-- PostgreSQL row-level security for store and buyer isolation
 
-## Repository status
-The `feat/marketplace-foundation` branch contains the greenfield application foundation, SQL migrations, authentication, seller invitation flow, and initial buyer/seller/admin dashboards. This is an implementation branch, not a production-ready marketplace. Payment, shipping, order checkout, finance settlement, full catalog management and email delivery for seller invitations are still release work.
+## Repository structure
+- `src/app/`: pages, layouts, route handlers and route-specific UI
+- `src/components/`: shared UI components
+- `src/lib/`: authentication, request context and shared server utilities
+- `src/db/`: database and auth schema access
+- `database/`: ordered SQL migrations and database smoke tests
+- `docs/`: architecture, deployment and implementation notes
+- `scripts/`: controlled maintenance tasks such as the migration runner
+- `.github/workflows/`: CI validation and explicitly scoped Preview deployment
 
-## Deployment source
-Cloudflare production builds must use the `feat/marketplace-foundation` branch. The application manifest (`package.json`) is located at the repository root.
+This is a modular monolith. Keep domain logic in the existing application structure until a real maintenance need justifies introducing additional module boundaries. Do not create duplicate apps or parallel implementations.
 
-## Local setup
-1. Configure the Supabase `exgarasi_app` role and Cloudflare Hyperdrive binding using `docs/deployment.md`.
-2. Install dependencies with `npm install` and create `.dev.vars` from `.dev.vars.example`.
-3. Run local development with `npm run dev`.
-4. Build and preview the Workers runtime with `npm run cf:preview`.
+## Environments and deployment safety
+- Development database: Supabase EXGARASI-dev
+- Preview Worker: `exgarasi-preview`, configured with the Preview R2 bucket
+- Production Worker and production resources must remain isolated from Preview changes.
+- Preview deployment is scoped to the `feat/seller-csv-import-persistence` branch and Wrangler `--env preview`.
+- Never merge to the production branch, deploy the root Wrangler environment, or apply development migrations to Production without explicit approval.
 
-## Routes
-- `/`: public landing page
-- `/sign-up`: buyer registration
-- `/sign-in`: account login
-- `/account/dashboard`: buyer order history
-- `/seller/accept-invitation?token=...`: seller onboarding
-- `/seller/dashboard`: partner store overview
-- `/admin/dashboard`: admin metrics and seller invitations
+## Database change policy
+SQL files in `database/` are ordered migration history. Keep applied migration files immutable, even if a later migration corrects or supersedes earlier behavior. Add a new numbered migration for subsequent schema changes. Do not delete or rename applied migrations to make the directory look cleaner.
 
-## Database
-SQL files in `database/` are the authoritative ordered migrations (0001–0013 currently applied to EXGARASI-dev). Supabase migration history records managed migrations; `public.schema_migrations` is seeded to keep the custom runner from replaying migrations already applied to EXGARASI-dev. Never run the web app with the migration/owner credentials. The runtime role must not own tables and must not have `BYPASSRLS`.
+The development database has migration history through migration `0017` according to the current project work. Confirm the actual Supabase migration ledger before applying any migration; never infer database state from filenames alone. The custom migration runner requires `MIGRATION_DATABASE_URL` and must not use application runtime credentials.
+
+## Local development
+1. Install dependencies with `npm install`.
+2. Create local-only `.dev.vars` from `.dev.vars.example`; never commit real credentials.
+3. Run `npm run dev` for the Next.js development server.
+4. Run `npm run cf:preview` to build and test the Workers runtime locally.
 
 ## Quality checks
 - `npm run lint`
 - `npm run typecheck`
 - `npm run build`
 
-GitHub Actions runs these checks on pushes and pull requests. They still need to pass in the connected repository environment before deployment.
+GitHub Actions runs validation separately from the Preview deployment workflow.
 
-## Security and production gates
-- Configure a verified sender domain and Resend credentials for production email verification.
-- Test row-level security using two different seller accounts and the actual non-owner runtime database role.
-- Add checkout, payment provider webhooks, shipping, refunds, ledger reconciliation and payout workflows.
-- Add password recovery, rate limits, abuse protection, monitoring and backup restore drills.
-- Confirm marketplace split-settlement capabilities and Indonesian regulatory requirements before processing real customer funds.
+## Current implementation scope
+The repository includes the storefront foundation, buyer authentication, seller invitation/verification flows, admin interfaces, cart foundation, and seller bulk CSV listing workflows. Checkout/payment, shipping, refunds, finance settlement, full catalog operations and production hardening remain release work.
 
-Read `docs/architecture.md`, `docs/implementation-plan.md`, and `docs/deployment.md` before deploying.
+See:
+- [Architecture](docs/architecture.md)
+- [Deployment](docs/deployment.md)
+- [Implementation plan](docs/implementation-plan.md)
+- [Seller bulk products](docs/seller-bulk-products.md)
