@@ -28,7 +28,7 @@ export async function GET(request: Request) {
       `;
       if (!access.length) throw new Error("FORBIDDEN");
       if (access[0].status !== "active") throw new Error("STORE_NOT_ACTIVE");
-      if (access[0].member_role && !["owner", "manager", "catalog_manager"].includes(String(access[0].member_role)))
+      if (access[0].member_role && !["owner", "manager", "catalog"].includes(String(access[0].member_role)))
         throw new Error("FORBIDDEN");
 
       return tx`

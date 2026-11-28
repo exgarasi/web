@@ -12,18 +12,25 @@ type PreviewResult = {
   rows: PreviewRow[];
   note: string;
 };
+type CommitResult = {
+  summary: { total: number; saved: number; failed: number };
+  rows: Array<{ rowNumber: number; listingId?: string; error?: string }>;
+  note: string;
+};
 
 export function SellerBulkCsv({ stores }: { stores: Array<{ id: string; name: string; status: string }> }) {
   const activeStores = stores.filter((store) => store.status === "active");
   const [storeId, setStoreId] = useState(activeStores[0]?.id ?? "");
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<PreviewResult | null>(null);
+  const [result, setResult] = useState<CommitResult | null>(null);
   const [busy, setBusy] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
   async function validate() {
     if (!file || !storeId) return;
-    setBusy(true); setError(""); setPreview(null);
+    setBusy(true); setError(""); setPreview(null); setResult(null);
     try {
       const body = new FormData();
       body.set("file", file);
@@ -35,6 +42,26 @@ export function SellerBulkCsv({ stores }: { stores: Array<{ id: string; name: st
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Validasi CSV gagal.");
     } finally { setBusy(false); }
+  }
+
+  async function commit() {
+    if (!preview || preview.summary.valid === 0 || preview.summary.invalid > 0 || !storeId) return;
+    if (!window.confirm(`Simpan ${preview.summary.valid} produk ke toko ini? Produk baru akan masuk status pending/draft; perubahan listing lama masuk antrean review.`)) return;
+    setSaving(true); setError(""); setResult(null);
+    try {
+      const rows = preview.rows.filter((row) => row.issues.length === 0);
+      const response = await fetch("/api/seller/products/bulk/commit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ storeId, rows }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error ?? "Penyimpanan CSV gagal.");
+      setResult(data as CommitResult);
+      if (data.summary?.failed === 0) setPreview(null);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Penyimpanan CSV gagal.");
+    } finally { setSaving(false); }
   }
 
   return <section className="mt-8 rounded-2xl border border-gray-200 bg-white p-6">
@@ -49,16 +76,16 @@ export function SellerBulkCsv({ stores }: { stores: Array<{ id: string; name: st
     {activeStores.length === 0 ? <p className="mt-5 rounded-xl bg-amber-50 p-4 text-sm text-amber-800">Impor produk akan tersedia setelah toko disetujui dan berstatus aktif.</p> : <>
       <div className="mt-5 grid gap-4 sm:grid-cols-2">
         <label className="text-xs font-semibold text-gray-600">Toko tujuan
-          <select value={storeId} onChange={(e) => { setStoreId(e.target.value); setPreview(null); }} className="mt-2 h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm">
+          <select value={storeId} onChange={(e) => { setStoreId(e.target.value); setPreview(null); setResult(null); }} className="mt-2 h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm">
             {activeStores.map((store) => <option key={store.id} value={store.id}>{store.name}</option>)}
           </select>
         </label>
         <label className="text-xs font-semibold text-gray-600">File CSV
-          <input type="file" accept=".csv,text/csv" onChange={(e) => { setFile(e.target.files?.[0] ?? null); setPreview(null); }} className="mt-2 block w-full rounded-xl border border-gray-200 p-2 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-gray-100 file:px-3 file:py-2" />
+          <input type="file" accept=".csv,text/csv" onChange={(e) => { setFile(e.target.files?.[0] ?? null); setPreview(null); setResult(null); }} className="mt-2 block w-full rounded-xl border border-gray-200 p-2 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-gray-100 file:px-3 file:py-2" />
         </label>
       </div>
       <div className="mt-4 flex flex-wrap items-center gap-3">
-        <button type="button" onClick={validate} disabled={!file || !storeId || busy} className="rounded-xl bg-[#111318] px-5 py-3 text-sm font-semibold text-white disabled:opacity-50">{busy ? "Memeriksa CSV…" : "Validasi & Preview"}</button>
+        <button type="button" onClick={validate} disabled={!file || !storeId || busy || saving} className="rounded-xl bg-[#111318] px-5 py-3 text-sm font-semibold text-white disabled:opacity-50">{busy ? "Memeriksa CSV…" : "Validasi & Preview"}</button>
         <span className="text-xs text-gray-500">Maksimal 2 MB · 500 produk per file</span>
       </div>
     </>}
@@ -80,7 +107,16 @@ export function SellerBulkCsv({ stores }: { stores: Array<{ id: string; name: st
           </tr>)}</tbody>
         </table>
       </div>
-      <p className="mt-3 rounded-xl bg-sky-50 p-3 text-xs leading-5 text-sky-800">{preview.note} Tombol simpan belum diaktifkan sampai pengambilan foto ke R2 dan transaksi impor aman selesai dibuat.</p>
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+        <p className="text-xs text-gray-500">Tidak ada baris yang disimpan sebelum Anda menekan tombol ini.</p>
+        <button type="button" onClick={commit} disabled={saving || preview.summary.valid === 0 || preview.summary.invalid > 0} className="rounded-xl bg-[#0099FF] px-5 py-3 text-sm font-bold text-white disabled:opacity-40">{saving ? "Menyimpan produk & foto…" : `Simpan ${preview.summary.valid} produk`}</button>
+      </div>
     </>}
+    {result && <div className="mt-5 rounded-xl border border-gray-200 p-4">
+      <h3 className="font-bold">Hasil impor</h3>
+      <p className="mt-2 text-sm text-gray-600">Berhasil: {result.summary.saved} · Gagal: {result.summary.failed}</p>
+      {result.rows.some((row) => row.error) && <ul className="mt-3 space-y-2 text-xs text-red-700">{result.rows.filter((row) => row.error).map((row) => <li key={row.rowNumber}>Baris {row.rowNumber}: {row.error}</li>)}</ul>}
+      <p className="mt-2 text-xs text-gray-500">{result.note}</p>
+    </div>}
   </section>;
 }

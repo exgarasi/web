@@ -120,15 +120,15 @@ export async function POST(request: Request) {
       const store = memberships[0];
       if (!store) throw new Error("FORBIDDEN");
       if (store.status !== "active") throw new Error("STORE_NOT_ACTIVE");
-      if (store.member_role && !["owner", "manager", "catalog_manager"].includes(String(store.member_role)))
+      if (store.member_role && !["owner", "manager", "catalog"].includes(String(store.member_role)))
         throw new Error("FORBIDDEN");
 
       const categories = await tx`select name from public.categories where is_active=true`;
       const categoryNames = new Set(categories.map((c) => String(c.name).trim().toLowerCase()));
       const brands = await tx`select name from public.brands`;
       const brandNames = new Set(brands.map((b) => String(b.name).trim().toLowerCase()));
-      const existing = await tx`select seller_sku from public.listings where store_id=${storeId}::uuid`;
-      const existingSkus = new Set(existing.map((r) => String(r.seller_sku).toLowerCase()));
+      const existing = await tx`select id, seller_sku from public.listings where store_id=${storeId}::uuid`;
+      const existingSkus = new Map(existing.map((r) => [String(r.seller_sku).toLowerCase(), String(r.id)]));
 
       for (const row of rows) {
         const d = row.data;
@@ -136,7 +136,7 @@ export async function POST(request: Request) {
           row.issues.push({ field: "category", message: "Kategori tidak ditemukan atau tidak aktif di EXGARASI." });
         if (d.brand && !brandNames.has(d.brand.toLowerCase()))
           row.issues.push({ field: "brand", message: "Merek belum terdaftar di katalog EXGARASI." });
-        if (d.sku && existingSkus.has(d.sku.toLowerCase()))
+        if (d.sku && existingSkus.has(d.sku.toLowerCase()) && existingSkus.get(d.sku.toLowerCase()) !== d.listing_id)
           row.issues.push({ field: "sku", message: "SKU sudah digunakan di toko ini." });
       }
       return { storeStatus: String(store.status) };
