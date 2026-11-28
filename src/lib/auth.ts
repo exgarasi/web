@@ -194,7 +194,7 @@ export async function getAuth() {
         "www.exgarasi.id",
         "fix-google-oauth-prod-isolated-exgarasi.exgarasi-id.workers.dev",
         "feat-seller-verification-exgarasi.exgarasi-id.workers.dev",
-        "*.exgarasi.exgarasi-id.workers.dev",
+        "*-exgarasi.exgarasi-id.workers.dev",
       ],
       protocol: "auto",
       fallback: "https://exgarasi.id",
