@@ -11,7 +11,7 @@ import {
   Store,
   Users,
 } from "lucide-react";
-import { getCurrentUser } from "@/lib/current-user";
+import { getAdminAccess } from "@/lib/admin-permissions";
 import { withAuthenticatedDb } from "@/lib/db-context";
 import { SellerInviteForm } from "./invite-form";
 import { AccountHeader } from "@/components/account-header";
@@ -57,12 +57,9 @@ function MetricCard({
 }
 
 export default async function AdminDashboard() {
-  const user = await getCurrentUser();
-  if (!user) redirect("/sign-in");
-  const roles = user.roles as string[];
-  const adminRoles = ["super_admin", "admin"];
-  const activeAdminRole = adminRoles.find((role) => roles.includes(role));
-  if (!activeAdminRole) redirect("/");
+  const access = await getAdminAccess("dashboard.read");
+  if (!access) redirect("/");
+  const { user, roles, activeRole: activeAdminRole } = access;
 
   const metrics = await withAuthenticatedDb(async (tx) => {
     const [sellers, listings, orders] = await Promise.all([
