@@ -79,6 +79,9 @@ export async function POST(request: Request) {
       const data: CsvRow = {};
       headers.forEach((header, i) => { data[header] = (values[i] ?? "").trim(); });
       const issues: Issue[] = [];
+      if (values.length !== headers.length) {
+        issues.push({ field: "_row", message: `Jumlah kolom pada baris ini tidak sesuai header (ditemukan ${values.length}, seharusnya ${headers.length}).` });
+      }
       for (const field of REQUIRED) if (!data[field]) issues.push({ field, message: "Wajib diisi." });
       if (data.condition && !["new", "used", "refurbished"].includes(data.condition.toLowerCase()))
         issues.push({ field: "condition", message: "Gunakan new, used, atau refurbished." });
