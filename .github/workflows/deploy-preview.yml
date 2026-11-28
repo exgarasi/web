@@ -1,6 +1,15 @@
 name: EXGARASI Preview Deploy
 
 on:
+  push:
+    branches: [feat/seller-csv-import-persistence]
+    paths:
+      - ".github/workflows/deploy-preview.yml"
+      - "src/**"
+      - "database/**"
+      - "wrangler.jsonc"
+      - "package.json"
+      - "package-lock.json"
   workflow_dispatch:
 
 permissions:
