@@ -2,13 +2,12 @@ import { createHash, randomBytes } from "node:crypto";
 import { NextResponse } from "next/server";
 import { withAuthenticatedDb } from "@/lib/db-context";
 import { getAdminAccess } from "@/lib/admin-permissions";
+import { createAdminRoute } from "@/lib/admin-route";
 import { sendSellerInvitationEmail } from "@/lib/auth";
 
 export const runtime = "nodejs";
 
-export async function POST(request: Request) {
-  const access = await getAdminAccess("sellers.invite");
-  if (!access) return NextResponse.json({ error: "Forbidden." }, { status: 403 });
+export const POST = createAdminRoute("sellers.invite", getAdminAccess, async (request, _access) => {
 
   const body = await request.json().catch(() => null) as { email?: string } | null;
   const email = body?.email?.trim().toLowerCase();
@@ -65,4 +64,4 @@ export async function POST(request: Request) {
     const status = message === "FORBIDDEN" ? 403 : message === "UNAUTHENTICATED" ? 401 : 500;
     return NextResponse.json({ error: message }, { status });
   }
-}
+});
