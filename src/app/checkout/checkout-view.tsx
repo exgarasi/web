@@ -24,6 +24,15 @@ type AddressForm = {
   recipientName: string; phone: string; addressLine: string; village: string;
   district: string; city: string; province: string; postalCode: string; isDefault: boolean;
 };
+type ManualInstructions = {
+  provider: "manual";
+  configured: boolean;
+  instructions: {
+    method: "manual_bank_transfer" | "manual_qris";
+    bank?: { name: string; accountName: string; accountNumber: string };
+    qrisImageUrl?: string;
+  };
+};
 const emptyAddress: AddressForm = {
   recipientName: "", phone: "", addressLine: "", village: "", district: "",
   city: "", province: "", postalCode: "", isDefault: true,
@@ -43,6 +52,7 @@ export function CheckoutView() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [order, setOrder] = useState<{ order_id: string; order_number: string; total_amount: number; currency: string; shipping_pending: boolean } | null>(null);
+  const [paymentInstructions, setPaymentInstructions] = useState<ManualInstructions | null>(null);
   const idempotencyKey = useRef("");
 
   const load = useCallback(async () => {
@@ -90,20 +100,42 @@ export function CheckoutView() {
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error || "Gagal membuat pesanan.");
       setOrder(payload.order);
+      const instructionsResponse = await fetch(`/api/payments/instructions?method=${paymentMethod}`, { cache: "no-store" });
+      if (instructionsResponse.ok) setPaymentInstructions(await instructionsResponse.json());
     } catch (err) {
       setError(err instanceof Error ? err.message : "Gagal membuat pesanan.");
     } finally { setBusy(false); }
   }
 
-  if (order) return <main className="mx-auto max-w-2xl rounded-3xl border border-[#e5eaf0] bg-white p-8 text-center">
+  if (order) return <main className="mx-auto max-w-2xl rounded-3xl border border-[#e5eaf0] bg-white p-8">
     <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-emerald-50 text-2xl text-emerald-600">✓</div>
-    <p className="mt-5 text-xs font-bold uppercase tracking-[.22em] text-[#168cf0]">Pesanan dibuat</p>
-    <h1 className="mt-2 text-2xl font-black">{order.order_number}</h1>
-    <p className="mt-3 text-sm text-[#667085]">Total sementara {money(Number(order.total_amount), order.currency)}.</p>
-    <p className="mt-2 rounded-2xl bg-amber-50 p-4 text-left text-sm leading-6 text-amber-900">
+    <p className="mt-5 text-center text-xs font-bold uppercase tracking-[.22em] text-[#168cf0]">Pesanan dibuat</p>
+    <h1 className="mt-2 text-center text-2xl font-black">{order.order_number}</h1>
+    <p className="mt-3 text-center text-sm text-[#667085]">Total sementara {money(Number(order.total_amount), order.currency)}.</p>
+    <section className="mt-6 rounded-2xl border border-[#e5eaf0] p-5">
+      <h2 className="font-bold">Instruksi pembayaran</h2>
+      {paymentInstructions?.configured && paymentInstructions.instructions.method === "manual_bank_transfer" && paymentInstructions.instructions.bank ? (
+        <div className="mt-4 space-y-2 text-sm">
+          <p>Bank: <strong>{paymentInstructions.instructions.bank.name}</strong></p>
+          <p>Atas nama: <strong>{paymentInstructions.instructions.bank.accountName}</strong></p>
+          <p>Nomor rekening: <strong className="select-all">{paymentInstructions.instructions.bank.accountNumber}</strong></p>
+        </div>
+      ) : paymentInstructions?.configured && paymentInstructions.instructions.method === "manual_qris" && paymentInstructions.instructions.qrisImageUrl ? (
+        <div className="mt-4 text-center">
+          <img src={paymentInstructions.instructions.qrisImageUrl} alt="QRIS resmi EXGARASI" className="mx-auto max-h-72 w-auto rounded-xl object-contain" />
+          <a href={paymentInstructions.instructions.qrisImageUrl} target="_blank" rel="noreferrer" className="mt-3 inline-block text-sm font-semibold text-[#168cf0]">Buka gambar QRIS</a>
+        </div>
+      ) : (
+        <p className="mt-3 rounded-xl bg-amber-50 p-4 text-sm leading-6 text-amber-900">
+          Instruksi metode pembayaran ini belum dikonfigurasi oleh admin. Jangan melakukan transfer atau pembayaran sebelum instruksi resmi tersedia.
+        </p>
+      )}
+      <p className="mt-4 text-xs leading-5 text-[#667085]">Pembayaran akan diperiksa manual oleh admin. Status pesanan belum lunas sampai admin memverifikasi pembayaran.</p>
+    </section>
+    <p className="mt-4 rounded-2xl bg-amber-50 p-4 text-sm leading-6 text-amber-900">
       Ongkos kirim belum termasuk. Admin EXGARASI perlu mengonfirmasi biaya pengiriman sebelum pembayaran dilakukan. Pesanan ini masih berstatus menunggu pembayaran.
     </p>
-    <Link href="/catalog" className="mt-6 inline-flex rounded-full bg-[#168cf0] px-6 py-3 text-sm font-bold text-white">Kembali ke marketplace</Link>
+    <Link href="/catalog" className="mt-6 inline-flex w-full justify-center rounded-full bg-[#168cf0] px-6 py-3 text-sm font-bold text-white">Kembali ke marketplace</Link>
   </main>;
 
   if (!data) return <div className="rounded-3xl border bg-white p-12 text-center text-sm text-[#667085]">Memuat checkout...</div>;
@@ -132,7 +164,7 @@ export function CheckoutView() {
           <label className={`cursor-pointer rounded-2xl border p-4 ${paymentMethod === "manual_bank_transfer" ? "border-[#168cf0] bg-[#f2f8ff]" : "border-[#e5eaf0]"}`}><input type="radio" name="payment" checked={paymentMethod==="manual_bank_transfer"} onChange={()=>setPaymentMethod("manual_bank_transfer")} /> <strong className="ml-2 text-sm">Transfer bank</strong><span className="mt-2 block text-xs text-[#667085]">Konfirmasi manual oleh admin</span></label>
           <label className={`cursor-pointer rounded-2xl border p-4 ${paymentMethod === "manual_qris" ? "border-[#168cf0] bg-[#f2f8ff]" : "border-[#e5eaf0]"}`}><input type="radio" name="payment" checked={paymentMethod==="manual_qris"} onChange={()=>setPaymentMethod("manual_qris")} /> <strong className="ml-2 text-sm">QRIS</strong><span className="mt-2 block text-xs text-[#667085]">Konfirmasi manual oleh admin</span></label>
         </div>
-        <p className="mt-4 rounded-xl bg-amber-50 p-3 text-xs leading-5 text-amber-900">Instruksi rekening dan QRIS akan ditampilkan setelah data pembayaran EXGARASI dikonfigurasi. Jangan melakukan transfer sebelum menerima instruksi resmi.</p>
+        <p className="mt-4 rounded-xl bg-amber-50 p-3 text-xs leading-5 text-amber-900">Instruksi rekening dan QRIS hanya akan ditampilkan jika admin telah mengonfigurasi data pembayaran resmi.</p>
       </div>
       {error && <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>}
     </section>
