@@ -1,3 +1,11 @@
+import { getCloudflareContext } from "@opennextjs/cloudflare";
+
+function readPaymentEnv(key: string) {
+  const { env } = getCloudflareContext();
+  const runtime = env as unknown as Record<string, string | undefined>;
+  return process.env[key]?.trim() || runtime[key]?.trim() || "";
+}
+
 export type ManualPaymentMethod = "manual_bank_transfer" | "manual_qris";
 
 export type PaymentInstructions = {
@@ -38,9 +46,9 @@ export interface PaymentProviderAdapter {
 
 export function getManualPaymentInstructions(method: ManualPaymentMethod): PaymentInstructions {
   if (method === "manual_bank_transfer") {
-    const name = process.env.PAYMENT_BANK_NAME?.trim();
-    const accountName = process.env.PAYMENT_BANK_ACCOUNT_NAME?.trim();
-    const accountNumber = process.env.PAYMENT_BANK_ACCOUNT_NUMBER?.trim();
+    const name = readPaymentEnv("PAYMENT_BANK_NAME");
+    const accountName = readPaymentEnv("PAYMENT_BANK_ACCOUNT_NAME");
+    const accountNumber = readPaymentEnv("PAYMENT_BANK_ACCOUNT_NUMBER");
 
     return {
       method,
@@ -50,7 +58,7 @@ export function getManualPaymentInstructions(method: ManualPaymentMethod): Payme
     };
   }
 
-  const qrisImageUrl = process.env.PAYMENT_QRIS_IMAGE_URL?.trim();
+  const qrisImageUrl = readPaymentEnv("PAYMENT_QRIS_IMAGE_URL");
   return {
     method,
     ...(qrisImageUrl ? { qrisImageUrl } : {}),
