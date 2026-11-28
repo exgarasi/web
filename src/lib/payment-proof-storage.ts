@@ -18,6 +18,8 @@ function encodeObjectKey(key: string) {
 
 export async function uploadPaymentProof(objectKey: string, bytes: Uint8Array, mimeType: string) {
   const { url, key } = getStorageConfig();
+  const uploadBody = new ArrayBuffer(bytes.byteLength);
+  new Uint8Array(uploadBody).set(bytes);
   const response = await fetch(`${url}/storage/v1/object/payment-proofs/${encodeObjectKey(objectKey)}`, {
     method: "POST",
     headers: {
@@ -27,7 +29,7 @@ export async function uploadPaymentProof(objectKey: string, bytes: Uint8Array, m
       "Cache-Control": "3600",
       "x-upsert": "false",
     },
-    body: bytes,
+    body: uploadBody,
   });
   if (!response.ok) {
     const detail = await response.text();
