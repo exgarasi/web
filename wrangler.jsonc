@@ -44,7 +44,7 @@
       ],
       "vars": {
         "EMAIL_FROM": "EXGARASI <noreply@exgarasi.id>",
-        "R2_PUBLIC_BASE_URL": "https://media.exgarasi.id"
+        "R2_PUBLIC_BASE_URL": "https://pub-d7f47c302f7f4ffd87720e03d34dcccc.r2.dev"
       }
     }
   }
