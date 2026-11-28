@@ -82,6 +82,6 @@ export function OrderPaymentView({orderId}:{orderId:string}) {
       {error&&<p role="alert" className="mt-4 text-sm text-red-700">{error}</p>}
       {message&&<p className="mt-4 text-sm text-emerald-700">{message}</p>}
     </section>
-    <Link href="/account" className="block text-center text-sm font-semibold text-[#667085]">Kembali ke akun</Link>
+    <Link href="/catalog" className="block text-center text-sm font-semibold text-[#667085]">Kembali ke marketplace</Link>
   </main>;
 }
