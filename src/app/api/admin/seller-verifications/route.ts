@@ -12,7 +12,7 @@ export const GET = createAdminRoute("sellers.admin", getAdminAccess, async (_req
       if (!roles.length) throw new Error("FORBIDDEN");
       return tx`
         select sv.id,sv.verification_type,sv.status,sv.review_note,sv.submitted_at,sv.reviewed_at,
-          s.id as store_id,s.name as store_name,s.slug as store_slug,s.status as store_status,
+          s.id as store_id,s.name as store_name,s.slug as store_slug,s.status as store_status,\n          (sv.document_object_key is not null) as has_document,
           u.full_name as owner_name,u.email as owner_email
         from public.seller_verifications sv
         join public.stores s on s.id=sv.store_id
