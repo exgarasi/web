@@ -13,7 +13,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const result = await withAuthenticatedDb(async (tx) => {
+    const result = await withAuthenticatedDb(async (tx, appUserId) => {
       const listings = await tx`
         select l.id, coalesce(i.available_stock, i.physical_stock - i.reserved_stock, 0)::int as stock
         from public.listings l
@@ -30,7 +30,7 @@ export async function POST(request: Request) {
 
       const carts = await tx`
         select id from public.carts
-        where user_id=${(await tx`select public.app_current_user_id() as id`)[0].id}::uuid
+        where user_id=${appUserId}::uuid
           and status='active'
         order by created_at desc limit 1 for update
       `;
