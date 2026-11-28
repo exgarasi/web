@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
 import { withAuthenticatedDb } from "@/lib/db-context";
+import { getAdminAccess } from "@/lib/admin-permissions";
 
 export const runtime = "nodejs";
 
 export async function PATCH(request: Request, context: { params: Promise<{ id: string }> }) {
+  const access = await getAdminAccess("sellers.admin");
+  if (!access) return NextResponse.json({ error: "Forbidden." }, { status: 403 });
   const { id } = await context.params;
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)) {
     return NextResponse.json({ error: "Invalid verification ID." }, { status: 400 });
