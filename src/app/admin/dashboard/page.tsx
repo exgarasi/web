@@ -60,7 +60,7 @@ export default async function AdminDashboard() {
   const user = await getCurrentUser();
   if (!user) redirect("/sign-in");
   const roles = user.roles as string[];
-  const adminRoles = ["super_admin", "admin", "finance", "moderator"];
+  const adminRoles = ["super_admin", "admin"];
   const activeAdminRole = adminRoles.find((role) => roles.includes(role));
   if (!activeAdminRole) redirect("/");
 
