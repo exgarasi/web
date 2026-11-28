@@ -25,5 +25,26 @@
   "vars": {
     "EMAIL_FROM": "EXGARASI <noreply@exgarasi.id>",
     "R2_PUBLIC_BASE_URL": "https://media.exgarasi.id"
+  },
+  "env": {
+    "preview": {
+      "name": "exgarasi-preview",
+      "hyperdrive": [
+        {
+          "binding": "HYPERDRIVE",
+          "id": "2dd24d3626a04be0a66a138b4e8bfdb3",
+          "remote": true
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "EXGARASI_MEDIA",
+          "bucket_name": "exgarasi-preview-media"
+        }
+      ],
+      "vars": {
+        "R2_PUBLIC_BASE_URL": "https://media-preview.exgarasi.id"
+      }
+    }
   }
 }
