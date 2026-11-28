@@ -199,6 +199,11 @@ export async function getAuth() {
       protocol: "auto",
       fallback: "https://exgarasi.id",
     },
+    trustedOrigins: [
+      "https://exgarasi.id",
+      "https://www.exgarasi.id",
+      "https://*-exgarasi.exgarasi-id.workers.dev",
+    ],
     database: drizzleAdapter(database.db, { provider: "pg", schema: authSchemaTables }),
     ...(googleCredentialsAvailable
       ? {
