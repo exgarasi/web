@@ -17,9 +17,8 @@ export async function getDatabase() {
     throw new Error("Cloudflare HYPERDRIVE binding is missing. Configure it in wrangler.jsonc.");
   }
 
-  // Hyperdrive maintains the shared pool. Reserve one connection for this
-  // request so the least-privilege role applies to every query made by the
-  // auth adapter, catalog readers, and authenticated database operations.
+  // Reserve one connection for this request so the least-privilege role applies
+  // to every query made by the auth adapter and application database operations.
   const client = postgres(connectionString, {
     max: 5,
     fetch_types: false,
@@ -46,7 +45,7 @@ export async function getDatabase() {
           await reserved!`RESET ROLE`;
         } finally {
           try {
-            await reserved!.release();
+            reserved!.release();
           } finally {
             await client.end({ timeout: 5 });
           }
@@ -55,7 +54,7 @@ export async function getDatabase() {
     };
   } catch (error) {
     if (reserved) {
-      await reserved.release().catch(() => undefined);
+      reserved.release();
     }
     await client.end({ timeout: 5 }).catch(() => undefined);
     throw error;
