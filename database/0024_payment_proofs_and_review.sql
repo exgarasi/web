@@ -33,6 +33,7 @@ DROP POLICY IF EXISTS payment_proofs_buyer_insert ON public.payment_proofs;
 CREATE POLICY payment_proofs_buyer_insert ON public.payment_proofs
   FOR INSERT WITH CHECK (
     uploaded_by = public.app_current_user_id()
+    AND object_key LIKE public.app_current_user_id()::text || '/' || payment_proofs.order_id::text || '/%'
     AND EXISTS (
       SELECT 1 FROM public.orders o
       JOIN public.payments p ON p.order_id=o.id
