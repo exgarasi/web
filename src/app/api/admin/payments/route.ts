@@ -14,7 +14,7 @@ export async function GET() {
         pp.created_at as submitted_at, pp.status as proof_status,
         o.id as order_id, o.order_number, o.total_amount, o.currency,
         o.shipping_amount, o.shipping_confirmed_at,
-        p.id as payment_id, p.payment_method, p.status as payment_status,
+        p.id as payment_id, p.provider as payment_method, p.status as payment_status,
         u.full_name as buyer_name, u.email as buyer_email
       from public.orders o
       join public.payments p on p.order_id=o.id
