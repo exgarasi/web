@@ -61,7 +61,7 @@ export async function POST(request: Request) {
           ${idempotencyKey}::text
         ) as order_data
       `;
-      return orderData;
+      return rows[0]?.order_data ?? null;
     });
     return NextResponse.json({ success: true, order: result }, { status: 201 });
   } catch (error) {
