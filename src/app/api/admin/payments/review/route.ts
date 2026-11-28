@@ -33,6 +33,11 @@ export async function POST(request: Request) {
         `;
         if (!updated.length) throw new Error("ORDER_NOT_PENDING");
         await tx`
+          update public.payments
+          set amount = (select total_amount from public.orders where id=${orderId}::uuid)
+          where order_id=${orderId}::uuid and status='pending'
+        `;
+        await tx`
           insert into public.audit_logs(actor_user_id,action,resource_type,resource_id,metadata)
           values (${access.user.id}::uuid,'order.shipping_confirmed','order',${orderId}::uuid,
             jsonb_build_object('shipping_amount',${amount}))
