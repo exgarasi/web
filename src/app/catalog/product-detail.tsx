@@ -15,7 +15,7 @@ type Product = {
 };
 
 export function ProductDetail({ product }: { product: Product }) {
-  const { locale, currency, formatPrice } = useLocale();
+  const { currency, formatPrice } = useLocale();
   const router = useRouter();
   const [adding, setAdding] = useState(false);
   const [cartMessage, setCartMessage] = useState("");
