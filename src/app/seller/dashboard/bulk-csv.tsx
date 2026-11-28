@@ -44,7 +44,7 @@ export function SellerBulkCsv({ stores }: { stores: Array<{ id: string; name: st
         <h2 className="mt-2 text-xl font-bold">Bulk Upload & Bulk Edit</h2>
         <p className="mt-1 max-w-2xl text-sm leading-6 text-gray-500">Siapkan semua data dan hingga lima URL foto dalam satu file CSV. SKU mengikuti sistem toko Anda.</p>
       </div>
-      <a href="/templates/exgarasi-products-template.csv" download className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-semibold hover:bg-gray-50">Unduh template CSV</a>
+      <div className="flex flex-wrap gap-2"><a href="/templates/exgarasi-products-template.csv" download className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-semibold hover:bg-gray-50">Unduh template CSV</a>{activeStores.length > 0 && <a href={`/api/seller/products/bulk/export?storeId=${storeId}`} className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-semibold hover:bg-gray-50">Ekspor produk toko</a>}</div>
     </div>
     {activeStores.length === 0 ? <p className="mt-5 rounded-xl bg-amber-50 p-4 text-sm text-amber-800">Impor produk akan tersedia setelah toko disetujui dan berstatus aktif.</p> : <>
       <div className="mt-5 grid gap-4 sm:grid-cols-2">
