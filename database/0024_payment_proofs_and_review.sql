@@ -1,10 +1,4 @@
 -- EXGARASI migration 0024: private manual-payment proofs and safe admin review.
-ALTER TABLE public.payments
-  ADD COLUMN IF NOT EXISTS payment_method text NOT NULL DEFAULT 'manual_bank_transfer';
-ALTER TABLE public.payments
-  ADD CONSTRAINT payments_payment_method_check
-  CHECK (payment_method IN ('manual_bank_transfer','manual_qris','midtrans'))
-  NOT VALID;
 ALTER TABLE public.orders
   ADD COLUMN IF NOT EXISTS shipping_confirmed_at timestamptz;
 
