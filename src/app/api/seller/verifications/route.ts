@@ -46,15 +46,19 @@ export async function POST(request: Request) {
         throw new Error(stores[0].status === "active" ? "STORE_ALREADY_APPROVED" : "STORE_NOT_ELIGIBLE");
       }
       const pending = await tx`
-        select id from public.seller_verifications
+        select id,status,submitted_at,document_object_key
+        from public.seller_verifications
         where store_id=${storeId}::uuid and status='pending'
         limit 1
       `;
-      if (pending.length) throw new Error("VERIFICATION_PENDING");
+      if (pending.length) {
+        if (!pending[0].document_object_key) return pending[0];
+        throw new Error("VERIFICATION_PENDING");
+      }
       const inserted = await tx`
         insert into public.seller_verifications(store_id,submitted_by,verification_type)
         values(${storeId}::uuid,public.app_current_user_id(),${verificationType})
-        returning id,status,submitted_at
+        returning id,status,submitted_at,document_object_key
       `;
       return inserted[0];
     });
