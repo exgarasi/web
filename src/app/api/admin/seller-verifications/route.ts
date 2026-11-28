@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { withAuthenticatedDb } from "@/lib/db-context";
+import { getAdminAccess } from "@/lib/admin-permissions";
+import { createAdminRoute } from "@/lib/admin-route";
 
 export const runtime = "nodejs";
 
-export async function GET() {
+export const GET = createAdminRoute("sellers.admin", getAdminAccess, async (_request, _access) => {
   try {
     const rows = await withAuthenticatedDb(async (tx) => {
       const roles = await tx`select role from public.user_roles where user_id=public.app_current_user_id() and role in ('admin','super_admin')`;
@@ -24,4 +26,4 @@ export async function GET() {
     const message = error instanceof Error ? error.message : "Unable to load seller verifications.";
     return NextResponse.json({ error: message }, { status: message === "FORBIDDEN" ? 403 : message === "UNAUTHENTICATED" ? 401 : 500 });
   }
-}
+});

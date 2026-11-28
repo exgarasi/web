@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { withAuthenticatedDb } from "@/lib/db-context";
+import { getAdminAccess } from "@/lib/admin-permissions";
+import { createAdminRoute } from "@/lib/admin-route";
 
 export const runtime = "nodejs";
 
-export async function PATCH(request: Request, context: { params: Promise<{ id: string }> }) {
+export const PATCH = createAdminRoute("sellers.admin", getAdminAccess, async (request, _access, context: { params: Promise<{ id: string }> }) => {
   const { id } = await context.params;
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)) {
     return NextResponse.json({ error: "Invalid verification ID." }, { status: 400 });
@@ -39,4 +41,4 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
       : 500;
     return NextResponse.json({ error: message }, { status });
   }
-}
+});

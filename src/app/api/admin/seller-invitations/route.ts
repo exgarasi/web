@@ -1,14 +1,17 @@
 import { createHash, randomBytes } from "node:crypto";
 import { NextResponse } from "next/server";
 import { withAuthenticatedDb } from "@/lib/db-context";
+import { getAdminAccess } from "@/lib/admin-permissions";
+import { createAdminRoute } from "@/lib/admin-route";
 import { sendSellerInvitationEmail } from "@/lib/auth";
 
 export const runtime = "nodejs";
 
-export async function POST(request: Request) {
+export const POST = createAdminRoute("sellers.invite", getAdminAccess, async (request, _access) => {
+
   const body = await request.json().catch(() => null) as { email?: string } | null;
   const email = body?.email?.trim().toLowerCase();
-  if (!email || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email))
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
     return NextResponse.json({ error: "A valid seller email is required." }, { status: 400 });
 
   const configuredBaseUrl = process.env.APP_BASE_URL || process.env.NEXT_PUBLIC_APP_URL;
@@ -27,7 +30,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Application URL is not configured correctly." }, { status: 500 });
   }
 
-  let invitationId: string | null = null;
   try {
     const result = await withAuthenticatedDb(async (tx) => {
       const roles = await tx`select role from public.user_roles where user_id = public.app_current_user_id() and role in ('admin','super_admin')`;
@@ -41,7 +43,6 @@ export async function POST(request: Request) {
       `;
       return { invitationId: String(rows[0].id), expiresAt: String(rows[0].expires_at), rawToken };
     });
-    invitationId = result.invitationId;
     const acceptUrl = new URL("/seller/accept-invitation", invitationBaseUrl);
     acceptUrl.searchParams.set("token", result.rawToken);
 
@@ -57,10 +58,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Undangan belum terkirim. Undangan dibatalkan; periksa konfigurasi Resend/Brevo dan coba lagi." }, { status: 502 });
     }
 
-    return NextResponse.json({ invitationId: result.invitationId, email, expiresAt: result.expiresAt, delivery: "accepted" }, { status: 201 });
+    return NextResponse.json({ invitationId: result.invitationId, email, expiresAt: result.expiresAt, acceptUrl: acceptUrl.toString(), delivery: "accepted" }, { status: 201 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Invitation failed.";
     const status = message === "FORBIDDEN" ? 403 : message === "UNAUTHENTICATED" ? 401 : 500;
     return NextResponse.json({ error: message }, { status });
   }
-}
+});
