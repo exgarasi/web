@@ -4,9 +4,9 @@ CSV is the canonical interchange format for both bulk product creation and bulk 
 
 ## Columns
 
-`title,description,details,category,sku,brand,series,model,year,condition,price,currency,stock,image_1,image_2,image_3,image_4,image_5`
+`listing_id,title,description,details,category,sku,brand,series,model,year,condition,price,currency,stock,image_1,image_2,image_3,image_4,image_5`
 
-- One CSV row represents one listing.
+- One CSV row represents one listing.\n- `listing_id` is optional and blank in the upload template; exports include it as a stable identifier for future bulk-edit operations.
 - `title`, `category`, `sku`, `price`, `currency`, `stock`, and `condition` are required for a new listing.
 - `sku` is the seller's own SKU. It may use any format, but must be unique within that seller's store.
 - `category` must match an active EXGARASI category name.
