@@ -4,13 +4,12 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, ShieldCheck, UserRoundPlus } from "lucide-react";
-import { CurrencySwitcher, LanguageSwitcher, useLocale } from "@/components/locale-provider";
+import { CurrencySwitcher } from "@/components/locale-provider";
 import { signIn, signUp } from "@/lib/auth-client";
 
 export default function SignUpPage() {
   const router = useRouter();
-  const { locale } = useLocale();
-  const id = locale === "id";
+  const id = true;
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -58,14 +57,14 @@ export default function SignUpPage() {
         <div className="absolute inset-0 bg-cover bg-center opacity-40" style={{backgroundImage:"url('https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1800&q=85')"}}/>
         <div className="absolute inset-0 bg-gradient-to-br from-[#09111b]/95 via-[#0b1520]/75 to-[#0b1520]/35"/>
         <Link href="/" className="relative z-10 flex items-center gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#0099ff] text-sm font-black text-white">EX</span><span className="text-lg font-black tracking-[.17em]">EXGARASI<span className="text-[#0099ff]">.</span></span></Link>
-        <div className="relative z-10 max-w-xl pb-8"><p className="text-[10px] font-bold tracking-[.25em] text-[#61bdff]">JOIN THE COMMUNITY</p><h2 className="mt-5 text-5xl font-semibold leading-[1.04] tracking-[-.05em] xl:text-6xl">{id ? "Dunia otomotif, satu komunitas." : "Automotive culture, one community."}</h2><p className="mt-6 max-w-md text-sm leading-7 text-white/65">{id ? "Buat akun untuk menjelajahi marketplace, menyimpan pilihan, dan mengikuti aktivitas pesanan Anda." : "Create an account to explore the marketplace, save your finds, and follow your orders."}</p><div className="mt-10 flex items-center gap-2 text-[11px] text-white/60"><ShieldCheck size={15} className="text-[#55baff]"/> {id ? "Pendaftaran akun pembeli terbuka" : "Open customer registration"}</div></div>
+        <div className="relative z-10 max-w-xl pb-8"><p className="text-[10px] font-bold tracking-[.25em] text-[#61bdff]">GABUNG BERSAMA KOMUNITAS</p><h2 className="mt-5 text-5xl font-semibold leading-[1.04] tracking-[-.05em] xl:text-6xl">{id ? "Dunia otomotif, satu komunitas." : "Automotive culture, one community."}</h2><p className="mt-6 max-w-md text-sm leading-7 text-white/65">{id ? "Buat akun untuk menjelajahi marketplace, menyimpan pilihan, dan mengikuti aktivitas pesanan Anda." : "Create an account to explore the marketplace, save your finds, and follow your orders."}</p><div className="mt-10 flex items-center gap-2 text-[11px] text-white/60"><ShieldCheck size={15} className="text-[#55baff]"/> {id ? "Pendaftaran akun pembeli terbuka" : "Open customer registration"}</div></div>
         <p className="relative z-10 text-[10px] tracking-wider text-white/35">© {new Date().getFullYear()} EXGARASI</p>
       </section>
       <section className="flex min-h-screen flex-col px-5 py-6 sm:px-10 lg:px-14 xl:px-20">
-        <div className="flex items-center justify-between"><Link href="/" className="inline-flex items-center gap-2 text-[11px] font-semibold text-[#7b8794] hover:text-[#0099ff] lg:hidden"><ArrowLeft size={14}/> EXGARASI</Link><div className="ml-auto flex items-center gap-2"><LanguageSwitcher/><CurrencySwitcher/></div></div>
+        <div className="flex items-center justify-between"><Link href="/" className="inline-flex items-center gap-2 text-[11px] font-semibold text-[#7b8794] hover:text-[#0099ff] lg:hidden"><ArrowLeft size={14}/> EXGARASI</Link><div className="ml-auto flex items-center gap-2"><CurrencySwitcher/></div></div>
         <div className="mx-auto flex w-full max-w-[440px] flex-1 flex-col justify-center py-12">
           <Link href="/" className="hidden text-[11px] font-semibold text-[#8a94a3] transition hover:text-[#0099ff] lg:inline-flex"><ArrowLeft size={14} className="mr-2"/> {id ? "Kembali ke beranda" : "Back to home"}</Link>
-          <p className="mt-8 text-[10px] font-bold tracking-[.25em] text-[#0099ff]">CREATE YOUR ACCOUNT</p>
+          <p className="mt-8 text-[10px] font-bold tracking-[.25em] text-[#0099ff]">BUAT AKUN ANDA</p>
           <h1 className="mt-3 text-4xl font-semibold tracking-[-.05em] text-[#111318]">{id ? "Bergabung dengan EXGARASI." : "Join EXGARASI."}</h1>
           <p className="mt-3 text-[13px] leading-6 text-[#7b8794]">{id ? "Mulai perjalanan Anda di marketplace otomotif." : "Start your journey in the automotive marketplace."}</p>
           <button type="button" onClick={signUpWithGoogle} disabled={busy} className="mt-8 flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-[#dfe5eb] bg-white text-[12px] font-bold text-[#27313d] transition hover:border-[#0099ff] hover:bg-[#f8fcff] disabled:cursor-not-allowed disabled:opacity-50"><span aria-hidden="true" className="flex h-5 w-5 items-center justify-center rounded-full border border-[#e5e7eb] text-[13px] font-black text-[#4285F4]">G</span> {id ? "Daftar dengan Google" : "Sign up with Google"}</button>
