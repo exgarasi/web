@@ -1,67 +1,74 @@
 # EXGARASI Marketplace Architecture
 
-## Business decisions
-- Model: hybrid marketplace (EXGARASI-owned inventory + invited partner sellers)
-- Seller onboarding: invitation-only; admin approval required
-- Monetization: commission on completed partner-store sales
-- Launch vertical: automotive (diecast, parts, accessories, lifestyle)
-- Architecture: modular monolith first; split services only when operationally justified
+## Product decisions
+- Hybrid marketplace: EXGARASI-owned inventory plus invited partner sellers
+- Seller onboarding is invitation-based and subject to admin review
+- Initial vertical: automotive (diecast, parts, accessories and lifestyle)
+- Commission applies to eligible completed partner-store sales
+- Architecture: modular monolith; do not split into services without an operational reason
 
-## Application topology
-- Web: Next.js + TypeScript, responsive storefront and role-specific dashboards
-- MVP runtime: standard Node.js hosting for Next.js (Vercel, Railway, Render, or equivalent); Cloudflare provides DNS, CDN, WAF and R2
-- Future runtime option: Cloudflare Workers + Hyperdrive after validating request-scoped PostgreSQL connections and Better Auth adapter lifecycle
-- API: server-side application modules; never trust client-submitted prices, roles, stock, or payment status
-- Database: managed PostgreSQL; Drizzle ORM for Better Auth and versioned SQL migrations (raw SQL is authoritative)
-- Media: Cloudflare R2 with short-lived presigned upload URLs
-- Async work: Cloudflare Queues for notifications, image processing, webhook follow-ups
-- External integrations: marketplace-capable payment provider, shipping aggregator, email provider
-- Observability: structured logs, error tracking, uptime checks, database backups
+## Runtime topology
+- Web application: Next.js App Router, React and TypeScript
+- Runtime: Cloudflare Workers using the OpenNext adapter
+- Database: managed PostgreSQL on Supabase, reached server-side through Cloudflare Hyperdrive
+- ORM/schema access: Drizzle ORM and Better Auth adapter; ordered SQL migrations remain authoritative for database changes
+- Media: Cloudflare R2; listing records store object keys and the application resolves public media URLs through runtime configuration
+- CI: GitHub Actions validation workflow
+- Preview deployment: separate workflow, explicitly scoped to the Preview Wrangler environment
 
-## Domain modules
-1. Identity & access: users, sessions, role assignments, store membership, authorization
-2. Seller & stores: invitations, verification, store profile and status
-3. Catalog: categories, brands, master products, store listings, vehicle fitments
-4. Inventory: stock balances, reservations, immutable stock movements
-5. Commerce: carts, parent orders, seller sub-orders, order items
-6. Payments: payment attempts, verified webhook events, refunds
-7. Finance: commission rules, immutable ledger, seller payable balances, payouts
-8. Logistics: shipments, shipment items, tracking events
-9. Trust & safety: reviews, disputes, moderation, audit log
+## Existing repository boundaries
+- `src/app/`: route pages, layouts, API route handlers and route-specific UI
+- `src/components/`: shared presentation components
+- `src/lib/`: authentication, current-user resolution, database context and shared utilities
+- `src/db/`: database and authentication schema definitions
+- `database/`: ordered SQL migrations and database smoke tests
+- `scripts/`: operational scripts, including the guarded migration runner
+- `docs/`: maintained project documentation
 
-## Hybrid marketplace rules
-- EXGARASI Official is represented by a store with store_type = 'official'.
-- Partner stores use store_type = 'partner' and must be invited and approved.
-- Every listing belongs to exactly one store. Inventory is owned by that store.
-- A parent order may contain items from multiple stores. Create one sub-order per store.
-- Partner commission applies only to eligible partner-store item amounts. Official-store sales are retail revenue, not marketplace commission.
-- Store-scoped queries must enforce authorization on the server and preferably PostgreSQL row-level security for sensitive tables.
+Keep the current structure coherent. Extract a domain module only when it reduces real coupling; do not create empty folders or duplicate abstractions merely to match a proposed architecture.
+
+## Domain responsibilities
+1. Identity and access: users, sessions, role assignments, store membership and authorization
+2. Sellers and stores: invitations, verification, store profile and status
+3. Catalog: categories, brands, master products, store listings and vehicle fitments
+4. Inventory: stock balances, reservations and immutable stock movements
+5. Commerce: carts, parent orders, seller sub-orders and order items
+6. Payments: payment attempts, verified webhook events and refunds
+7. Finance: commission rules, immutable ledger, seller payable balances and payouts
+8. Logistics: shipments, shipment items and tracking events
+9. Trust and safety: reviews, disputes, moderation and audit log
+
+These are logical domain boundaries, not a requirement to create a separate service or folder for every domain today.
+
+## Marketplace invariants
+- EXGARASI Official is represented by a store with `store_type = 'official'`.
+- Partner stores use `store_type = 'partner'` and must pass the invitation and approval process.
+- Every listing belongs to exactly one store; inventory belongs to that store.
 - Seller SKU is unique within a store; master product IDs are not seller SKUs.
+- A future parent order may contain items from multiple stores, with one sub-order per store.
+- Partner commission applies only to eligible partner-store amounts. Official-store sales are retail revenue.
 
-## Transaction invariants
-- Store money as integer minor units (IDR rupiah in this deployment; no floating point).
-- Calculate price, discounts, shipping, fees, and commission on the server.
-- Reserve inventory atomically in a database transaction using row locks or conditional updates.
-- Payment status changes only after signature-verified provider webhooks or trusted reconciliation.
-- Webhook event IDs and idempotency keys must be unique.
-- A checkout creates a parent order and store sub-orders in one database transaction.
-- Financial events are append-only ledger entries; never overwrite a historical balance event.
-- Refunds and payout reversals create compensating ledger entries.
-- Never hold customer funds in an ordinary EXGARASI bank account without a legally reviewed, provider-approved marketplace funds-flow arrangement.
+## Transaction and security invariants
+- Store money as integer minor units; do not use floating point for money.
+- Calculate price, discounts, shipping, fees and commission on the server.
+- Never trust client-submitted roles, stock, prices or payment status.
+- Enforce authorization on the server and PostgreSQL row-level security for protected data.
+- Reserve inventory atomically using transactions, row locks or conditional updates.
+- Change payment status only after signature-verified provider webhooks or trusted reconciliation.
+- Use unique webhook event IDs and idempotency keys.
+- Treat financial events as append-only ledger entries; reversals create compensating entries.
+- Do not process real customer funds until the provider funds-flow model and Indonesian regulatory requirements have been reviewed.
 
-## Suggested deployment environments
-- local: local PostgreSQL and local object storage emulator or development R2 bucket
-- preview: isolated preview database and test payment credentials
-- production: managed PostgreSQL, production R2 bucket, production payment credentials
-- Secrets are environment variables/secrets manager only; never commit .env files.
+## Environment separation
+- Local development uses local-only variables and a development database/resource set.
+- Preview uses the dedicated `exgarasi-preview` Worker and `exgarasi-media-preview` bucket. Preview database access must remain development/test scoped.
+- Production resources are separate and must not be changed by Preview work.
+- Secrets belong in the appropriate encrypted runtime secret store; never commit real credentials.
 
-## Initial domain boundaries
-Use a modular monolith with modules under src/modules. Keep payment and shipping providers behind adapters. Use an outbox/queue pattern for notifications and non-critical background work. Do not introduce microservices in the MVP.
-
-## MVP acceptance gates
-- Role and store isolation tests pass.
-- Inventory cannot go negative under concurrent checkout tests.
-- Duplicate webhooks cannot duplicate payments, stock movements, commissions, or payouts.
-- Multi-store checkout creates exactly one parent order and one sub-order per store.
+## Release gates
+- Role and store-isolation tests pass using the non-owner runtime database role.
+- Inventory cannot become negative under concurrent operations.
+- Duplicate webhooks cannot duplicate payments, stock movements, commissions or payouts.
+- Multi-store checkout is atomic and creates one sub-order per participating store.
 - Refund and payout reconciliation is auditable.
-- Backup restoration has been tested before production launch.
+- Backup restoration, monitoring and incident procedures are tested before production launch.
