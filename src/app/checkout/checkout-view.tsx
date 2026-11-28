@@ -51,7 +51,7 @@ export function CheckoutView() {
   const [showForm, setShowForm] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [order, setOrder] = useState<{ order_id: string; order_number: string; payment_id: string; total_amount: number; currency: string; shipping_pending: boolean } | null>(null);
+  const [order, setOrder] = useState<{ order_id: string; order_number: string; payment_id: string; total_amount: number; currency: string; shipping_pending?: boolean; shipping_amount?: number; shipping_confirmed_at?: string | null; payment_status?: string; proof_status?: string | null; review_note?: string | null } | null>(null);
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [proofBusy, setProofBusy] = useState(false);
   const [proofMessage, setProofMessage] = useState("");
@@ -93,7 +93,7 @@ export function CheckoutView() {
     } finally { setBusy(false); }
   }
 
-  async function uploadProof() {
+  async function refreshPaymentStatus(orderId: string) {\n    const response = await fetch("/api/payments/proof?orderId=" + orderId, { cache: "no-store" });\n    const payload = await response.json();\n    if (!response.ok) throw new Error(payload.error || "Gagal memuat status pembayaran.");\n    setOrder(payload.order);\n  }\n\n  async function uploadProof() {
     if (!order || !proofFile) { setProofError("Pilih gambar bukti pembayaran terlebih dahulu."); return; }
     setProofBusy(true); setProofError(""); setProofMessage("");
     try {
@@ -133,7 +133,7 @@ export function CheckoutView() {
     <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-emerald-50 text-2xl text-emerald-600">✓</div>
     <p className="mt-5 text-center text-xs font-bold uppercase tracking-[.22em] text-[#168cf0]">Pesanan dibuat</p>
     <h1 className="mt-2 text-center text-2xl font-black">{order.order_number}</h1>
-    <p className="mt-3 text-center text-sm text-[#667085]">Total sementara {money(Number(order.total_amount), order.currency)}.</p>
+    <p className="mt-3 text-center text-sm text-[#667085]">Total tagihan {money(Number(order.total_amount), order.currency)}.</p>
     <section className="mt-6 rounded-2xl border border-[#e5eaf0] p-5">
       <h2 className="font-bold">Instruksi pembayaran</h2>
       {paymentInstructions?.configured && paymentInstructions.instructions.method === "manual_bank_transfer" && paymentInstructions.instructions.bank ? (
