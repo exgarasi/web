@@ -24,15 +24,6 @@ type AddressForm = {
   recipientName: string; phone: string; addressLine: string; village: string;
   district: string; city: string; province: string; postalCode: string; isDefault: boolean;
 };
-type ManualInstructions = {
-  provider: "manual";
-  configured: boolean;
-  instructions: {
-    method: "manual_bank_transfer" | "manual_qris";
-    bank?: { name: string; accountName: string; accountNumber: string };
-    qrisImageUrl?: string;
-  };
-};
 const emptyAddress: AddressForm = {
   recipientName: "", phone: "", addressLine: "", village: "", district: "",
   city: "", province: "", postalCode: "", isDefault: true,
@@ -51,12 +42,6 @@ export function CheckoutView() {
   const [showForm, setShowForm] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [order, setOrder] = useState<{ order_id: string; order_number: string; payment_id: string; total_amount: number; currency: string; shipping_pending?: boolean; shipping_amount?: number; shipping_confirmed_at?: string | null; payment_status?: string; proof_status?: string | null; review_note?: string | null } | null>(null);
-  const [proofFile, setProofFile] = useState<File | null>(null);
-  const [proofBusy, setProofBusy] = useState(false);
-  const [proofMessage, setProofMessage] = useState("");
-  const [proofError, setProofError] = useState("");
-  const [paymentInstructions, setPaymentInstructions] = useState<ManualInstructions | null>(null);
   const idempotencyKey = useRef("");
 
   const load = useCallback(async () => {
@@ -93,32 +78,6 @@ export function CheckoutView() {
     } finally { setBusy(false); }
   }
 
-  async function refreshPaymentStatus(orderId: string) {
-    const response = await fetch("/api/payments/proof?orderId=" + orderId, { cache: "no-store" });
-    const payload = await response.json();
-    if (!response.ok) throw new Error(payload.error || "Gagal memuat status pembayaran.");
-    setOrder(payload.order);
-  }
-
-  async function uploadProof() {
-    if (!order || !proofFile) { setProofError("Pilih gambar bukti pembayaran terlebih dahulu."); return; }
-    setProofBusy(true); setProofError(""); setProofMessage("");
-    try {
-      const formData = new FormData();
-      formData.set("orderId", order.order_id);
-      formData.set("paymentId", order.payment_id);
-      formData.set("file", proofFile);
-      const response = await fetch("/api/payments/proof", { method: "POST", body: formData });
-      const payload = await response.json();
-      if (!response.ok) throw new Error(payload.error || "Gagal mengunggah bukti.");
-      setProofMessage(payload.message || "Bukti berhasil dikirim.");
-      setProofFile(null);
-      await refreshPaymentStatus(order.order_id);
-    } catch (err) {
-      setProofError(err instanceof Error ? err.message : "Gagal mengunggah bukti pembayaran.");
-    } finally { setProofBusy(false); }
-  }
-
   async function placeOrder() {
     if (!addressId) { setError("Pilih alamat pengiriman terlebih dahulu."); return; }
     setBusy(true); setError("");
@@ -134,50 +93,6 @@ export function CheckoutView() {
       setError(err instanceof Error ? err.message : "Gagal membuat pesanan.");
     } finally { setBusy(false); }
   }
-
-  if (order) return <main className="mx-auto max-w-2xl rounded-3xl border border-[#e5eaf0] bg-white p-8">
-    <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-emerald-50 text-2xl text-emerald-600">✓</div>
-    <p className="mt-5 text-center text-xs font-bold uppercase tracking-[.22em] text-[#168cf0]">Pesanan dibuat</p>
-    <h1 className="mt-2 text-center text-2xl font-black">{order.order_number}</h1>
-    <p className="mt-3 text-center text-sm text-[#667085]">Total tagihan {money(Number(order.total_amount), order.currency)}.</p>
-    <section className="mt-6 rounded-2xl border border-[#e5eaf0] p-5">
-      <h2 className="font-bold">Instruksi pembayaran</h2>
-      {!order.shipping_confirmed_at ? (<p className="mt-3 rounded-xl bg-amber-50 p-4 text-sm leading-6 text-amber-900">Jangan melakukan pembayaran dahulu. Tunggu admin mengonfirmasi ongkos kirim dan total akhir pesanan.</p>) : paymentInstructions?.configured && paymentInstructions.instructions.method === "manual_bank_transfer" && paymentInstructions.instructions.bank ? (
-        <div className="mt-4 space-y-2 text-sm">
-          <p>Bank: <strong>{paymentInstructions.instructions.bank.name}</strong></p>
-          <p>Atas nama: <strong>{paymentInstructions.instructions.bank.accountName}</strong></p>
-          <p>Nomor rekening: <strong className="select-all">{paymentInstructions.instructions.bank.accountNumber}</strong></p>
-        </div>
-      ) : paymentInstructions?.configured && paymentInstructions.instructions.method === "manual_qris" && paymentInstructions.instructions.qrisImageUrl ? (
-        <div className="mt-4 text-center">
-          <img src={paymentInstructions.instructions.qrisImageUrl} alt="QRIS resmi EXGARASI" className="mx-auto max-h-72 w-auto rounded-xl object-contain" />
-          <a href={paymentInstructions.instructions.qrisImageUrl} target="_blank" rel="noreferrer" className="mt-3 inline-block text-sm font-semibold text-[#168cf0]">Buka gambar QRIS</a>
-        </div>
-      ) : (
-        <p className="mt-3 rounded-xl bg-amber-50 p-4 text-sm leading-6 text-amber-900">
-          Instruksi metode pembayaran ini belum dikonfigurasi oleh admin. Jangan melakukan transfer atau pembayaran sebelum instruksi resmi tersedia.
-        </p>
-      )}
-      <p className="mt-4 text-xs leading-5 text-[#667085]">Pembayaran akan diperiksa manual oleh admin. Status pesanan belum lunas sampai admin memverifikasi pembayaran.</p>
-    </section>
-    <p className="mt-4 rounded-2xl bg-amber-50 p-4 text-sm leading-6 text-amber-900">
-      Ongkos kirim: {order.shipping_confirmed_at ? money(Number(order.shipping_amount || 0), order.currency) : "menunggu konfirmasi admin"}. Total tagihan diperbarui setelah ongkos kirim dikonfirmasi.
-    </p>
-    <section className="mt-5 rounded-2xl border border-[#e5eaf0] p-5">
-      <div className="flex items-center justify-between gap-3"><h2 className="font-bold">Status pembayaran</h2><button onClick={()=>void refreshPaymentStatus(order.order_id).catch(e=>setProofError(e.message))} className="text-xs font-bold text-[#168cf0]">Perbarui status</button></div>
-      {order.payment_status === "paid" ? <p className="mt-3 rounded-xl bg-emerald-50 p-4 text-sm font-semibold text-emerald-800">Pembayaran telah diverifikasi. Pesanan Anda sudah lunas.</p>
-      : order.proof_status === "pending" ? <p className="mt-3 rounded-xl bg-amber-50 p-4 text-sm text-amber-900">Bukti pembayaran telah diterima dan sedang diperiksa admin EXGARASI.</p>
-      : !order.shipping_confirmed_at ? <p className="mt-3 rounded-xl bg-amber-50 p-4 text-sm leading-6 text-amber-900">Silakan tunggu admin mengonfirmasi ongkos kirim dan total akhir. Setelah itu, perbarui status untuk melihat tagihan final dan mengunggah bukti.</p>
-      : <><p className="mt-2 text-sm text-[#667085]">Total akhir: <strong>{money(Number(order.total_amount), order.currency)}</strong></p>
-        {order.proof_status === "rejected" && <p className="mt-3 rounded-xl bg-red-50 p-3 text-sm text-red-700">Bukti sebelumnya ditolak. {order.review_note || "Silakan unggah bukti yang benar."}</p>}
-        <p className="mt-2 text-xs leading-5 text-[#667085]">Format JPG, PNG, atau WebP. Maksimal 5 MB. Bukti disimpan secara privat.</p>
-        <input type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>setProofFile(e.target.files?.[0]??null)} className="mt-4 block w-full text-sm" />
-        <button disabled={!proofFile||proofBusy} onClick={()=>void uploadProof()} className="mt-4 w-full rounded-full bg-[#168cf0] px-5 py-3 text-sm font-bold text-white disabled:opacity-40">{proofBusy?"Mengunggah...":"Kirim bukti pembayaran"}</button></>}
-      {proofError&&<p role="alert" className="mt-3 text-sm text-red-700">{proofError}</p>}
-      {proofMessage&&<p className="mt-3 text-sm text-emerald-700">{proofMessage}</p>}
-    </section>
-    <Link href="/catalog" className="mt-6 inline-flex w-full justify-center rounded-full bg-[#168cf0] px-6 py-3 text-sm font-bold text-white">Kembali ke marketplace</Link>
-  </main>;
 
   if (!data) return <div className="rounded-3xl border bg-white p-12 text-center text-sm text-[#667085]">Memuat checkout...</div>;
   const currency = data.cart.currency || "IDR";
