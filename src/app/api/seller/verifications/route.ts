@@ -2,18 +2,21 @@ import { NextResponse } from "next/server";
 import { withAuthenticatedDb } from "@/lib/db-context";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
     const rows = await withAuthenticatedDb((tx) => tx`
-      select sv.id,sv.verification_type,sv.status,sv.review_note,sv.submitted_at,sv.reviewed_at,s.id as store_id,s.name as store_name
+      select sv.id,sv.verification_type,sv.status,sv.review_note,sv.submitted_at,sv.reviewed_at,
+        (sv.document_object_key is not null) as has_document,
+        s.id as store_id,s.name as store_name
       from public.seller_verifications sv
       join public.stores s on s.id=sv.store_id
       where s.owner_user_id=public.app_current_user_id()
         or exists(select 1 from public.store_members sm where sm.store_id=s.id and sm.user_id=public.app_current_user_id())
       order by sv.submitted_at desc
     `);
-    return NextResponse.json({ verifications: rows });
+    return NextResponse.json({ verifications: rows }, { headers:{"Cache-Control":"no-store"} });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to load verification.";
     return NextResponse.json({ error: message }, { status: message === "UNAUTHENTICATED" ? 401 : 500 });
