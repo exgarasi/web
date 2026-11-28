@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
 import { withAuthenticatedDb } from "@/lib/db-context";
+import { getAdminAccess } from "@/lib/admin-permissions";
 
 export const runtime = "nodejs";
 
 export async function GET() {
+  const access = await getAdminAccess("sellers.admin");
+  if (!access) return NextResponse.json({ error: "Forbidden." }, { status: 403 });
   try {
     const rows = await withAuthenticatedDb(async (tx) => {
       const roles = await tx`select role from public.user_roles where user_id=public.app_current_user_id() and role in ('admin','super_admin')`;
