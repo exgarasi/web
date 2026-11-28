@@ -3,8 +3,7 @@ name: EXGARASI CI
 on:
   push:
     branches: [main, "feat/**", "release/**", "fix/**"]
-  pull_request:
-    branches: [main, "feat/**", "release/**", "fix/**"]
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
