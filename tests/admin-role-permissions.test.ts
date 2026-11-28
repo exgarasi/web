@@ -13,13 +13,15 @@ test("super admin receives all defined admin permissions", () => {
 test("admin cannot assign privileged roles or manage finance", () => {
   assert.equal(roleHasPermission("admin", "dashboard.read"), true);
   assert.equal(roleHasPermission("admin", "roles.manage"), false);
-  assert.equal(roleHasPermission("admin", "finance.manage"), false);\n  assert.equal(roleHasPermission("admin", "payments.verify"), true);
+  assert.equal(roleHasPermission("admin", "finance.manage"), false);
+  assert.equal(roleHasPermission("admin", "payments.verify"), true);
 });
 
 test("finance is limited to dashboard, orders read and finance", () => {
   assert.equal(roleHasPermission("finance", "dashboard.read"), true);
   assert.equal(roleHasPermission("finance", "orders.read"), true);
-  assert.equal(roleHasPermission("finance", "finance.manage"), true);\n  assert.equal(roleHasPermission("finance", "payments.verify"), false);
+  assert.equal(roleHasPermission("finance", "finance.manage"), true);
+  assert.equal(roleHasPermission("finance", "payments.verify"), false);
   assert.equal(roleHasPermission("finance", "catalog.read"), false);
   assert.equal(roleHasPermission("finance", "orders.manage"), false);
   assert.equal(roleHasPermission("finance", "users.manage"), false);
