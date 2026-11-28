@@ -25,11 +25,5 @@
   "vars": {
     "EMAIL_FROM": "EXGARASI <noreply@exgarasi.id>",
     "R2_PUBLIC_BASE_URL": "https://media.exgarasi.id"
-  },
-  "previews": {
-    "vars": {
-      "EMAIL_FROM": "EXGARASI <noreply@exgarasi.id>",
-      "R2_PUBLIC_BASE_URL": "https://media.exgarasi.id"
-    }
   }
 }
