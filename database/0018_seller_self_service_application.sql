@@ -71,3 +71,67 @@ $$;
 REVOKE ALL ON FUNCTION public.app_submit_seller_application(text,text,text,text) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.app_submit_seller_application(text,text,text,text) FROM anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.app_submit_seller_application(text,text,text,text) TO exgarasi_app;
+
+-- Extend the existing Admin review function so approved self-service applicants
+-- receive the seller role. The previous function activated the store but did not
+-- assign this role, which would otherwise leave the seller dashboard inaccessible.
+CREATE OR REPLACE FUNCTION public.app_review_seller_verification(
+  target_verification_id uuid,
+  requested_decision text,
+  requested_review_note text DEFAULT NULL
+)
+RETURNS TABLE(verification_id uuid, store_id uuid, decision text)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $function$
+DECLARE
+  reviewed_id uuid;
+  reviewed_store_id uuid;
+  owner_id uuid;
+BEGIN
+  IF NOT public.app_is_admin() THEN
+    RAISE EXCEPTION 'FORBIDDEN';
+  END IF;
+  IF requested_decision IS NULL OR requested_decision NOT IN ('approved', 'rejected') THEN
+    RAISE EXCEPTION 'INVALID_DECISION';
+  END IF;
+  IF length(coalesce(requested_review_note, '')) > 1000 THEN
+    RAISE EXCEPTION 'INVALID_REVIEW_NOTE';
+  END IF;
+
+  UPDATE public.seller_verifications AS sv
+  SET status = requested_decision,
+      review_note = nullif(btrim(requested_review_note), ''),
+      reviewer_user_id = public.app_current_user_id(),
+      reviewed_at = now()
+  WHERE sv.id = target_verification_id AND sv.status = 'pending'
+  RETURNING sv.id, sv.store_id INTO reviewed_id, reviewed_store_id;
+
+  IF reviewed_id IS NULL THEN
+    RAISE EXCEPTION 'VERIFICATION_NOT_PENDING';
+  END IF;
+
+  IF requested_decision = 'approved' THEN
+    UPDATE public.stores AS s
+    SET status = 'active', approved_at = now(), updated_at = now()
+    WHERE s.id = reviewed_store_id
+    RETURNING s.owner_user_id INTO owner_id;
+    IF NOT FOUND THEN
+      RAISE EXCEPTION 'STORE_NOT_FOUND';
+    END IF;
+
+    INSERT INTO public.user_roles(user_id, role)
+    VALUES(owner_id, 'seller')
+    ON CONFLICT (user_id, role) DO NOTHING;
+  END IF;
+
+  INSERT INTO public.audit_logs(actor_user_id, action, resource_type, resource_id, metadata)
+  VALUES(public.app_current_user_id(),
+         CASE WHEN requested_decision = 'approved' THEN 'seller_application_approved' ELSE 'seller_application_rejected' END,
+         'seller_verification', reviewed_id,
+         jsonb_build_object('store_id', reviewed_store_id, 'decision', requested_decision));
+
+  RETURN QUERY SELECT reviewed_id, reviewed_store_id, requested_decision;
+END;
+$function$;
